@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UFC Quant Strategy Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- Google Fonts: Inter para UI clara e Oswald/Impact-like para números e destaques -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Barra Lateral / Header Superior -->
+        <header class="top-nav">
+            <div class="logo">
+                <i class="fa-solid fa-hand-fist"></i>
+                <h1>MMA <span>QUANT</span></h1>
+            </div>
+            <div class="system-status">
+                <span class="pulse-dot"></span> Live Data Sync
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <!-- Controles e Variáveis Globais -->
+            <section class="global-controls glass-panel">
+                <div class="control-group">
+                    <span class="label">Banca Inicial</span>
+                    <span class="value" id="val-banca-inicial">--</span>
+                </div>
+                <div class="control-group">
+                    <span class="label">Target Units</span>
+                    <span class="value" id="val-target-units">--</span>
+                </div>
+                <div class="control-group">
+                    <span class="label">Unit Size</span>
+                    <span class="value" id="val-unit-size">--</span>
+                </div>
+                <div class="control-group highlight">
+                    <span class="label">Dólar Hoje (R$)</span>
+                    <span class="value" id="val-dolar-hoje">--</span>
+                </div>
+            </section>
+
+            <!-- KPIs -->
+            <section class="kpi-grid">
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-header">
+                        <i class="fa-solid fa-wallet"></i> Bankroll Atual (USD)
+                    </div>
+                    <div class="kpi-value" id="kpi-bankroll-usd">--</div>
+                    <div class="kpi-subtitle">Total Final</div>
+                </div>
+
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-header">
+                        <i class="fa-solid fa-chart-line"></i> ROI Acumulado
+                    </div>
+                    <div class="kpi-value highlight-gold" id="kpi-roi">--%</div>
+                    <div class="kpi-subtitle" id="kpi-roi-subtitle">Retorno sobre o investimento</div>
+                </div>
+
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-header">
+                        <i class="fa-solid fa-money-bill-trend-up"></i> Profit / Loss (USD)
+                    </div>
+                    <div class="kpi-value" id="kpi-profit-usd">--</div>
+                    <div class="kpi-subtitle">Lucro Total</div>
+                </div>
+
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-header">
+                        <i class="fa-solid fa-percent"></i> Win Rate
+                    </div>
+                    <div class="kpi-value" id="kpi-winrate">--%</div>
+                    <div class="kpi-subtitle">Vitórias vs Derrotas</div>
+                </div>
+            </section>
+
+            <!-- Gráfico de Evolução -->
+            <section class="chart-section glass-panel">
+                <div class="panel-header">
+                    <h2>Evolução da Banca</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="bankrollChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Tabela de Lutas -->
+            <section class="fights-section glass-panel">
+                <div class="panel-header">
+                    <div class="tabs-container">
+                        <button class="tab-btn active" data-tab="finished">Últimas Apostas</button>
+                        <button class="tab-btn" data-tab="future">Apostas Futuras</button>
+                        <button class="tab-btn" data-tab="todo">Apostas a Fazer</button>
+                    </div>
+                    <div class="table-filters">
+                        <input type="text" id="searchFight" placeholder="Buscar lutador ou evento..."
+                            class="search-input">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="betsTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Evento</th>
+                                <th>Luta</th>
+                                <th>Odds</th>
+                                <th>Risk (USD)</th>
+                                <th>Risk (BRL)</th>
+                                <th>Resultado</th>
+                                <th>P/L (USD)</th>
+                                <th>Bankroll</th>
+                            </tr>
+                        </thead>
+                        <tbody id="betsTableBody">
+                            <!-- Populated via JS -->
+                            <tr>
+                                <td colspan="9" class="loading-cell">Carregando dados da planilha...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts (Chart.js para gráficos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
