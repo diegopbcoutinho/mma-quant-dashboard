@@ -49,8 +49,8 @@ function fetchSheetData() {
         processData(data.table);
     };
 
-    // Injeta o script JSONP
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=0`;
+    // Injeta o script JSONP com cache-busting para sempre buscar dados frescos
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=0&t=${Date.now()}`;
     const s = document.createElement('script');
     s.src = url;
     s.onerror = () => showTableError('Erro de conexão com o Google Sheets.');
@@ -225,6 +225,19 @@ function renderTable(filter = '') {
                 <th>Resultado</th>
             `;
         }
+    }
+
+    // Resumo de apostas futuras
+    const summaryEl = document.getElementById('future-summary');
+    if (appState.currentTab === 'future') {
+        const totalStake = tabFiltered.reduce((s, b) => s + b.stakeUSD, 0);
+        const totalProfit = tabFiltered.reduce((s, b) => s + b.stakeUSD * (b.odds - 1), 0);
+        document.getElementById('fut-total-stake').innerText = fmt(totalStake);
+        document.getElementById('fut-total-profit').innerText = '+' + fmt(totalProfit);
+        document.getElementById('fut-count').innerText = tabFiltered.length;
+        summaryEl.style.display = 'flex';
+    } else {
+        summaryEl.style.display = 'none';
     }
 
     if (filtered.length === 0) {

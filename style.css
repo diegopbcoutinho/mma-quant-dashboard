@@ -349,6 +349,45 @@ tr:hover td {
     color: var(--text-muted);
 }
 
+/* Future bets summary bar */
+.future-summary-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(212, 175, 55, 0.04);
+}
+
+.future-summary-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 20px;
+    gap: 4px;
+    border-right: 1px solid var(--border-color);
+}
+
+.future-summary-item:last-child {
+    border-right: none;
+}
+
+.future-summary-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.future-summary-value {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
 .loading-cell {
     text-align: center;
     padding: 40px !important;
