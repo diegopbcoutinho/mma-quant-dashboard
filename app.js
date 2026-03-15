@@ -17,6 +17,7 @@ const SHEET_ID = '14OKOxc2bh9B-EL6gVZYTo82WGz5tdU-n-MetnKCedRI';
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     fetchSheetData();
+    fetchDolar();
     document.getElementById('searchFight').addEventListener('input', e => renderTable(e.target.value));
 
     // Configura os botões de abas
@@ -29,6 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// ─── COTAÇÃO DO DÓLAR ─────────────────────────────────────────────────────────
+function fetchDolar() {
+    fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL')
+        .then(r => r.json())
+        .then(data => {
+            const rate = parseFloat(data.USDBRL.bid);
+            if (rate > 0) {
+                appState.globals.dolarHoje = rate;
+                document.getElementById('val-dolar-hoje').innerText = 'R$ ' + rate.toFixed(2);
+            }
+        })
+        .catch(() => {
+            document.getElementById('val-dolar-hoje').innerText = 'R$ --';
+        });
+}
 
 // ─── BUSCA DE DADOS ───────────────────────────────────────────────────────────
 /**
@@ -95,17 +112,6 @@ function processData(table) {
     appState.globals.targetUnits = 1.5;
     appState.globals.unitSize = 0.01;
 
-    // Dólar hoje: varre as primeiras 3 linhas procurando um número entre 4 e 15 (faixa realista BRL/USD)
-    let dolar = 0;
-    outer: for (let ri = 0; ri < Math.min(3, rows.length); ri++) {
-        const row = rows[ri];
-        if (!row.c) continue;
-        for (let ci = 0; ci < row.c.length; ci++) {
-            const v = row.c[ci] ? row.c[ci].v : null;
-            if (typeof v === 'number' && v >= 4 && v <= 15) { dolar = v; break outer; }
-        }
-    }
-    appState.globals.dolarHoje = dolar;
 
     // Apostas começam na linha 4 (índice 4), pois linha 3 é cabeçalho
     appState.bets = [];
@@ -154,7 +160,8 @@ function updateUI() {
     document.getElementById('val-banca-inicial').innerText = '$' + appState.globals.bancaInicial.toFixed(2);
     document.getElementById('val-target-units').innerText = appState.globals.targetUnits.toFixed(2);
     document.getElementById('val-unit-size').innerText = (appState.globals.unitSize * 100).toFixed(1) + '%';
-    document.getElementById('val-dolar-hoje').innerText = 'R$ ' + appState.globals.dolarHoje.toFixed(4);
+    // Dólar é atualizado por fetchDolar() — só mostra placeholder se ainda não chegou
+    if (!appState.globals.dolarHoje) document.getElementById('val-dolar-hoje').innerText = 'R$ ...';
 
     // KPIs
     const settled = appState.bets.filter(b => b.result === 'W' || b.result === 'L');
