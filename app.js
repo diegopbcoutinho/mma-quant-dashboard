@@ -90,11 +90,22 @@ function processData(table) {
         return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
     };
 
-    // Linha 0: Banca Inicial está em col 2 como string "500", Dolar em col 5 como number
-    appState.globals.bancaInicial = asFloat(val(rows[0], 2));
-    appState.globals.dolarHoje = asFloat(val(rows[0], 5));
-    appState.globals.targetUnits = asFloat(val(rows[1], 2));
-    appState.globals.unitSize = asFloat(val(rows[2], 2));
+    // Valores fixos de configuração (hardcoded — não mudam com frequência)
+    appState.globals.bancaInicial = 500;
+    appState.globals.targetUnits = 1.5;
+    appState.globals.unitSize = 0.01;
+
+    // Dólar hoje: varre as primeiras 3 linhas procurando um número entre 4 e 15 (faixa realista BRL/USD)
+    let dolar = 0;
+    outer: for (let ri = 0; ri < Math.min(3, rows.length); ri++) {
+        const row = rows[ri];
+        if (!row.c) continue;
+        for (let ci = 0; ci < row.c.length; ci++) {
+            const v = row.c[ci] ? row.c[ci].v : null;
+            if (typeof v === 'number' && v >= 4 && v <= 15) { dolar = v; break outer; }
+        }
+    }
+    appState.globals.dolarHoje = dolar;
 
     // Apostas começam na linha 4 (índice 4), pois linha 3 é cabeçalho
     appState.bets = [];
