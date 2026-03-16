@@ -200,15 +200,17 @@ function renderTable(filter = '') {
     tbody.innerHTML = '';
 
     let tabFiltered = appState.bets.filter(b => {
-        // Como o Google Sheets via API GViz não exporta cores de fundo,
-        // usamos as regras dos dados vazios para diferenciar:
-        const isFinished = b.result !== ''; // Resultado preenchido
-        const isTodo = b.result === '' && (b.odds === 0 || b.date === ''); // Sem dados chave (ou odd ou data vazios)
-        const isFuture = b.result === '' && !isTodo; // Evento/Fight + Odds + Data preenchidos, mas resultado vazio
+        // Coluna L (result) define o estado da aposta:
+        //   'W' ou 'L'  → finalizada (Últimas Apostas)
+        //   '-'          → aposta feita, aguardando resultado (Apostas Futuras)
+        //   ''           → ainda não apostada (Apostas a Fazer)
+        const isFinished = b.result === 'W' || b.result === 'L';
+        const isFuture   = b.result === '-';
+        const isTodo     = b.result === '';
 
         if (appState.currentTab === 'finished') return isFinished;
-        if (appState.currentTab === 'future') return isFuture;
-        if (appState.currentTab === 'todo') return isTodo;
+        if (appState.currentTab === 'future')   return isFuture;
+        if (appState.currentTab === 'todo')     return isTodo;
         return true;
     });
 
