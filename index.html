@@ -4,202 +4,369 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UFC Quant Strategy Tracker</title>
+    <title>MMA Quant Strategy Tracker</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <!-- Google Fonts: Inter para UI clara e Oswald/Impact-like para números e destaques -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;700&display=swap"
         rel="stylesheet">
-    <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="app-container">
-        <!-- Barra Lateral / Header Superior -->
-        <header class="top-nav">
-            <div class="logo">
-                <i class="fa-solid fa-hand-fist"></i>
-                <h1>MMA <span>QUANT</span></h1>
+    <div class="app-layout" id="appLayout">
+
+        <!-- ══ SIDEBAR ══════════════════════════════════════════════════════ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
+                    <i class="fa-solid fa-hand-fist"></i>
+                    <span class="sidebar-logo-text">MMA <strong>QUANT</strong></span>
+                </div>
+                <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Recolher sidebar">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
             </div>
-            <div class="system-status">
-                <span class="pulse-dot"></span> Live Data Sync
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-page="dashboard" data-tooltip="Dashboard"
+                    onclick="navigateTo('dashboard')">
+                    <i class="fa-solid fa-house nav-icon"></i>
+                    <span class="nav-label">Dashboard</span>
+                </button>
+                <button class="nav-item" data-page="analytics" data-tooltip="Analytics"
+                    onclick="navigateTo('analytics')">
+                    <i class="fa-solid fa-chart-column nav-icon"></i>
+                    <span class="nav-label">Analytics</span>
+                </button>
+                <button class="nav-item" data-page="bets" data-tooltip="Apostas"
+                    onclick="navigateTo('bets')">
+                    <i class="fa-solid fa-list-check nav-icon"></i>
+                    <span class="nav-label">Apostas</span>
+                </button>
+                <button class="nav-item" data-page="simulator" data-tooltip="Simulador"
+                    onclick="navigateTo('simulator')">
+                    <i class="fa-solid fa-chart-line nav-icon"></i>
+                    <span class="nav-label">Simulador</span>
+                </button>
+                <button class="nav-item" data-page="settings" data-tooltip="Configurações"
+                    onclick="navigateTo('settings')">
+                    <i class="fa-solid fa-gear nav-icon"></i>
+                    <span class="nav-label">Configurações</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-live">
+                    <span class="pulse-dot"></span>
+                    <span class="nav-label">Live Sync</span>
+                </div>
+                <div class="sidebar-version">v0.3 Beta</div>
             </div>
-        </header>
+        </aside>
 
-        <main class="dashboard-content">
-            <!-- Controles e Variáveis Globais -->
-            <section class="global-controls glass-panel">
-                <div class="control-group">
-                    <span class="label">Banca Inicial</span>
-                    <span class="value" id="val-banca-inicial">--</span>
-                </div>
-                <div class="control-group">
-                    <span class="label">Target Units</span>
-                    <span class="value" id="val-target-units">--</span>
-                </div>
-                <div class="control-group">
-                    <span class="label">Unit Size</span>
-                    <span class="value" id="val-unit-size">--</span>
-                </div>
-                <div class="control-group highlight">
-                    <span class="label">Dólar Hoje (R$)</span>
-                    <span class="value" id="val-dolar-hoje">--</span>
-                </div>
-            </section>
+        <!-- Mobile tap-to-close overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-            <!-- KPIs -->
-            <section class="kpi-grid">
-                <div class="kpi-card glass-panel">
-                    <div class="kpi-header">
-                        <i class="fa-solid fa-wallet"></i> Bankroll Atual (USD)
+        <!-- ══ MAIN WRAPPER ═════════════════════════════════════════════════ -->
+        <div class="main-wrapper">
+
+            <!-- ── Top Bar ──────────────────────────────────────────────── -->
+            <header class="top-bar">
+                <button class="mobile-menu-btn" onclick="openSidebar()" title="Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <span class="top-bar-title" id="top-bar-title">Dashboard</span>
+                <div class="top-bar-pills">
+                    <div class="top-pill">
+                        <span class="pill-label">USD/BRL</span>
+                        <span class="pill-value" id="val-dolar-topbar">R$ --</span>
                     </div>
-                    <div class="kpi-value" id="kpi-bankroll-usd">--</div>
-                    <div class="kpi-subtitle">Total Final</div>
+                </div>
+            </header>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 PAGE: DASHBOARD
+                 ══════════════════════════════════════════════════════════════ -->
+            <main id="page-dashboard" class="page-content">
+                <div class="page-header">
+                    <h1 class="page-title">Dashboard</h1>
                 </div>
 
-                <div class="kpi-card glass-panel">
-                    <div class="kpi-header">
-                        <i class="fa-solid fa-chart-line"></i> ROI Acumulado
-                    </div>
-                    <div class="kpi-value highlight-gold" id="kpi-roi">--%</div>
-                    <div class="kpi-subtitle" id="kpi-roi-subtitle">Retorno sobre o investimento</div>
-                </div>
-
-                <div class="kpi-card glass-panel">
-                    <div class="kpi-header">
-                        <i class="fa-solid fa-money-bill-trend-up"></i> Profit / Loss (USD)
-                    </div>
-                    <div class="kpi-value" id="kpi-profit-usd">--</div>
-                    <div class="kpi-subtitle">Lucro Total</div>
-                </div>
-
-                <div class="kpi-card glass-panel">
-                    <div class="kpi-header">
-                        <i class="fa-solid fa-percent"></i> Win Rate
-                    </div>
-                    <div class="kpi-value" id="kpi-winrate">--%</div>
-                    <div class="kpi-subtitle">Vitórias vs Derrotas</div>
-                </div>
-            </section>
-
-            <!-- Gráfico de Evolução -->
-            <section class="chart-section glass-panel">
-                <div class="panel-header">
-                    <h2>Evolução da Banca</h2>
-                </div>
-                <div class="chart-container">
-                    <canvas id="bankrollChart"></canvas>
-                </div>
-            </section>
-
-            <!-- Performance Analytics -->
-            <section class="analytics-section glass-panel" id="analyticsPanel" style="opacity:0">
-                <div class="panel-header">
-                    <h2 class="analytics-title">
-                        <i class="fa-solid fa-chart-column" style="color:var(--accent-gold);font-size:18px"></i>
-                        Performance Analytics
-                        <span class="tooltip-wrapper">
-                            <i class="fa-solid fa-circle-info analytics-info-icon"></i>
-                            <span class="tooltip-text">Breakdown estatístico da sua performance histórica.</span>
-                        </span>
-                    </h2>
-                </div>
-
-                <!-- Block 1: Insight Cards -->
-                <div class="analytics-insights-row" id="analyticsInsights"></div>
-
-                <!-- Block 2 + 3: Chart + Table -->
-                <div class="analytics-grid">
-                    <div class="analytics-block">
-                        <div class="analytics-block-title">
-                            <i class="fa-solid fa-chart-bar"></i> ROI por Faixa de Odds
+                <!-- KPIs -->
+                <section class="kpi-grid">
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-header">
+                            <i class="fa-solid fa-wallet"></i> Bankroll Atual (USD)
                         </div>
-                        <div class="analytics-chart-wrap">
-                            <canvas id="roiByOddsChart"></canvas>
-                        </div>
+                        <div class="kpi-value" id="kpi-bankroll-usd">--</div>
+                        <div class="kpi-subtitle">Total Final</div>
                     </div>
-                    <div class="analytics-block">
-                        <div class="analytics-block-header">
+
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-header">
+                            <i class="fa-solid fa-chart-line"></i> ROI Acumulado
+                        </div>
+                        <div class="kpi-value highlight-gold" id="kpi-roi">--%</div>
+                        <div class="kpi-subtitle" id="kpi-roi-subtitle">Retorno sobre o investimento</div>
+                    </div>
+
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-header">
+                            <i class="fa-solid fa-money-bill-trend-up"></i> Profit / Loss (USD)
+                        </div>
+                        <div class="kpi-value" id="kpi-profit-usd">--</div>
+                        <div class="kpi-subtitle">Lucro Total</div>
+                    </div>
+
+                    <div class="kpi-card glass-panel">
+                        <div class="kpi-header">
+                            <i class="fa-solid fa-percent"></i> Win Rate
+                        </div>
+                        <div class="kpi-value" id="kpi-winrate">--%</div>
+                        <div class="kpi-subtitle">Vitórias vs Derrotas</div>
+                    </div>
+                </section>
+
+                <!-- Bankroll Chart -->
+                <section class="chart-section glass-panel">
+                    <div class="panel-header">
+                        <h2>Evolução da Banca</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="bankrollChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Global Controls -->
+                <section class="global-controls glass-panel">
+                    <div class="control-group">
+                        <span class="label">Banca Inicial</span>
+                        <span class="value" id="val-banca-inicial">--</span>
+                    </div>
+                    <div class="control-group">
+                        <span class="label">Target Units</span>
+                        <span class="value" id="val-target-units">--</span>
+                    </div>
+                    <div class="control-group">
+                        <span class="label">Unit Size</span>
+                        <span class="value" id="val-unit-size">--</span>
+                    </div>
+                    <div class="control-group highlight">
+                        <span class="label">Dólar Hoje (R$)</span>
+                        <span class="value" id="val-dolar-hoje">--</span>
+                    </div>
+                </section>
+
+                <!-- Bottom grid: recent bets + upcoming -->
+                <div class="dashboard-bottom-grid">
+                    <section class="glass-panel">
+                        <div class="panel-header" style="padding:20px 20px 0">
+                            <h2 style="font-family:var(--font-heading);font-size:16px;text-transform:uppercase;letter-spacing:0.5px">Últimas Apostas</h2>
+                            <button class="panel-link-btn" onclick="navigateTo('bets')">Ver todas →</button>
+                        </div>
+                        <div style="padding:0 20px 20px" id="recentBetsWrap">
+                            <p class="empty-state-msg">Carregando...</p>
+                        </div>
+                    </section>
+
+                    <section class="glass-panel">
+                        <div class="panel-header" style="padding:20px 20px 0">
+                            <h2 style="font-family:var(--font-heading);font-size:16px;text-transform:uppercase;letter-spacing:0.5px">Apostas em Andamento</h2>
+                        </div>
+                        <div style="padding:0 20px 20px" id="upcomingBetsWrap">
+                            <p class="empty-state-msg">Carregando...</p>
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 PAGE: ANALYTICS
+                 ══════════════════════════════════════════════════════════════ -->
+            <main id="page-analytics" class="page-content page-hidden">
+                <div class="page-header">
+                    <h1 class="page-title">Analytics</h1>
+                </div>
+
+                <div id="analyticsPanel" style="opacity:0;display:contents">
+                    <!-- Insight Cards -->
+                    <div class="analytics-insights-row" id="analyticsInsights"></div>
+
+                    <!-- Chart + Table grid -->
+                    <div class="analytics-grid">
+                        <div class="analytics-block">
                             <div class="analytics-block-title">
-                                <i class="fa-solid fa-ranking-star"></i> Análise por Grupo
+                                <i class="fa-solid fa-chart-bar"></i> ROI por Faixa de Odds
                             </div>
-                            <div class="analytics-mini-tabs">
-                                <button class="analytics-mini-tab active" onclick="switchProfitTab('event', this)">
-                                    Por Evento
-                                </button>
-                                <button class="analytics-mini-tab" onclick="switchProfitTab('fighter', this)">
-                                    Por Lutador
-                                    <span class="tooltip-wrapper">
-                                        <i class="fa-solid fa-circle-info" style="font-size:9px;margin-left:3px;color:var(--text-muted)"></i>
-                                        <span class="tooltip-text" style="font-size:11px">Rentabilidade histórica apostando em cada lutador.</span>
-                                    </span>
-                                </button>
+                            <div class="analytics-chart-wrap">
+                                <canvas id="roiByOddsChart"></canvas>
                             </div>
                         </div>
-                        <div id="profitByEventWrap"></div>
+                        <div class="analytics-block">
+                            <div class="analytics-block-header">
+                                <div class="analytics-block-title">
+                                    <i class="fa-solid fa-ranking-star"></i> Análise por Grupo
+                                </div>
+                                <div class="analytics-mini-tabs">
+                                    <button class="analytics-mini-tab active"
+                                        onclick="switchProfitTab('event', this)">
+                                        Por Evento
+                                    </button>
+                                    <button class="analytics-mini-tab"
+                                        onclick="switchProfitTab('fighter', this)">
+                                        Por Lutador
+                                        <span class="tooltip-wrapper">
+                                            <i class="fa-solid fa-circle-info"
+                                                style="font-size:9px;margin-left:3px;color:var(--text-muted)"></i>
+                                            <span class="tooltip-text"
+                                                style="font-size:11px">Rentabilidade histórica apostando em cada lutador.</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="profitByEventWrap"></div>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </main>
 
-            <!-- Tabela de Lutas -->
-            <section class="fights-section glass-panel">
-                <div class="panel-header">
-                    <div class="tabs-container">
-                        <button class="tab-btn active" data-tab="finished">Últimas Apostas</button>
-                        <button class="tab-btn" data-tab="future">Apostas Futuras</button>
-                        <button class="tab-btn" data-tab="todo">Apostas a Fazer</button>
-                    </div>
-                    <div class="table-filters">
-                        <input type="text" id="searchFight" placeholder="Buscar lutador ou evento..."
-                            class="search-input">
-                    </div>
+            <!-- ══════════════════════════════════════════════════════════════
+                 PAGE: APOSTAS
+                 ══════════════════════════════════════════════════════════════ -->
+            <main id="page-bets" class="page-content page-hidden">
+                <div class="page-header">
+                    <h1 class="page-title">Apostas</h1>
                 </div>
-                <div id="future-summary" style="display:none" class="future-summary-bar">
-                    <div class="future-summary-item">
-                        <span class="future-summary-label"><i class="fa-solid fa-coins"></i> Total Apostado</span>
-                        <span class="future-summary-value" id="fut-total-stake">--</span>
-                    </div>
-                    <div class="future-summary-item">
-                        <span class="future-summary-label"><i class="fa-solid fa-arrow-trend-up"></i> Lucro Potencial</span>
-                        <span class="future-summary-value text-gold" id="fut-total-profit">--</span>
-                    </div>
-                    <div class="future-summary-item">
-                        <span class="future-summary-label"><i class="fa-solid fa-list-check"></i> Apostas</span>
-                        <span class="future-summary-value" id="fut-count">--</span>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table id="betsTable">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Evento</th>
-                                <th>Luta</th>
-                                <th>Odds</th>
-                                <th>Risk (USD)</th>
-                                <th>Risk (BRL)</th>
-                                <th>Resultado</th>
-                                <th>P/L (USD)</th>
-                                <th>Bankroll</th>
-                            </tr>
-                        </thead>
-                        <tbody id="betsTableBody">
-                            <!-- Populated via JS -->
-                            <tr>
-                                <td colspan="9" class="loading-cell">Carregando dados da planilha...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-    </div>
 
-    <!-- Scripts (Chart.js para gráficos) -->
+                <section class="fights-section glass-panel">
+                    <div class="panel-header">
+                        <div class="tabs-container">
+                            <button class="tab-btn active" data-tab="finished">Últimas Apostas</button>
+                            <button class="tab-btn" data-tab="future">Apostas Futuras</button>
+                            <button class="tab-btn" data-tab="todo">Apostas a Fazer</button>
+                        </div>
+                        <div class="table-filters">
+                            <input type="text" id="searchFight" placeholder="Buscar lutador ou evento..."
+                                class="search-input">
+                        </div>
+                    </div>
+                    <div id="future-summary" style="display:none" class="future-summary-bar">
+                        <div class="future-summary-item">
+                            <span class="future-summary-label"><i class="fa-solid fa-coins"></i> Total Apostado</span>
+                            <span class="future-summary-value" id="fut-total-stake">--</span>
+                        </div>
+                        <div class="future-summary-item">
+                            <span class="future-summary-label"><i class="fa-solid fa-arrow-trend-up"></i> Lucro Potencial</span>
+                            <span class="future-summary-value text-gold" id="fut-total-profit">--</span>
+                        </div>
+                        <div class="future-summary-item">
+                            <span class="future-summary-label"><i class="fa-solid fa-list-check"></i> Apostas</span>
+                            <span class="future-summary-value" id="fut-count">--</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="betsTable">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Evento</th>
+                                    <th>Luta</th>
+                                    <th>Odds</th>
+                                    <th>Risk (USD)</th>
+                                    <th>Risk (BRL)</th>
+                                    <th>Resultado</th>
+                                    <th>P/L (USD)</th>
+                                    <th>Bankroll</th>
+                                </tr>
+                            </thead>
+                            <tbody id="betsTableBody">
+                                <tr>
+                                    <td colspan="9" class="loading-cell">Carregando dados da planilha...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 PAGE: SIMULADOR
+                 ══════════════════════════════════════════════════════════════ -->
+            <main id="page-simulator" class="page-content page-hidden">
+                <div class="page-header">
+                    <h1 class="page-title">Simulador</h1>
+                </div>
+
+                <section class="glass-panel">
+                    <div class="empty-page-state">
+                        <i class="fa-solid fa-flask"></i>
+                        <h3>Em desenvolvimento</h3>
+                        <p>Simulador de trajetória da banca — em breve.</p>
+                    </div>
+                </section>
+            </main>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 PAGE: CONFIGURAÇÕES
+                 ══════════════════════════════════════════════════════════════ -->
+            <main id="page-settings" class="page-content page-hidden">
+                <div class="page-header">
+                    <h1 class="page-title">Configurações</h1>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Parâmetros da Banca -->
+                    <section class="glass-panel settings-card">
+                        <h3>Parâmetros da Banca</h3>
+                        <div class="settings-field">
+                            <label for="set-banca">Banca Inicial (USD)</label>
+                            <input type="number" id="set-banca" class="settings-input" placeholder="500">
+                        </div>
+                        <div class="settings-field">
+                            <label for="set-unit">Unit Size (%)</label>
+                            <input type="number" id="set-unit" class="settings-input" placeholder="1.0" step="0.1">
+                        </div>
+                        <div class="settings-field">
+                            <label for="set-target">Target Units</label>
+                            <input type="number" id="set-target" class="settings-input" placeholder="1.5" step="0.1">
+                        </div>
+                        <button class="btn-save" onclick="saveSettings()">Salvar</button>
+                    </section>
+
+                    <!-- Conexão com Dados -->
+                    <section class="glass-panel settings-card">
+                        <h3>Conexão com Dados</h3>
+                        <div class="connection-row">
+                            <span>Google Sheets</span>
+                            <span class="status-badge online">Conectado</span>
+                        </div>
+                        <div class="connection-row">
+                            <span>Câmbio (AwesomeAPI)</span>
+                            <span class="status-badge online">Ao Vivo</span>
+                        </div>
+                        <button class="btn-sync" onclick="fetchSheetData(); fetchDolar()">
+                            <i class="fa-solid fa-rotate"></i> Sincronizar agora
+                        </button>
+                    </section>
+
+                    <!-- Sobre (full width) -->
+                    <section class="glass-panel settings-card settings-card--full">
+                        <h3>Sobre</h3>
+                        <p style="font-size:14px;color:var(--text-muted);line-height:1.6">
+                            MMA Quant Strategy Tracker v0.3 Beta<br>
+                            Rastreamento quantitativo de apostas em MMA com integração ao Google Sheets
+                            e cotação de câmbio em tempo real.
+                        </p>
+                    </section>
+                </div>
+            </main>
+
+        </div><!-- /.main-wrapper -->
+    </div><!-- /.app-layout -->
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="performanceAnalytics.js"></script>
     <script src="app.js"></script>

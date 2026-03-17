@@ -15,13 +15,101 @@ let appState = {
 // ID do seu Google Sheet (nunca muda)
 const SHEET_ID = '14OKOxc2bh9B-EL6gVZYTo82WGz5tdU-n-MetnKCedRI';
 
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+
+const PAGE_TITLES = {
+    dashboard: 'Dashboard',
+    analytics: 'Analytics',
+    bets: 'Apostas',
+    simulator: 'Simulador',
+    settings: 'Configurações'
+};
+
+function navigateTo(pageId) {
+    document.querySelectorAll('.page-content').forEach(p => {
+        p.classList.toggle('page-hidden', p.id !== 'page-' + pageId);
+    });
+    document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.page === pageId);
+    });
+    const titleEl = document.getElementById('top-bar-title');
+    if (titleEl) titleEl.textContent = PAGE_TITLES[pageId] || '';
+    localStorage.setItem('mma_last_page', pageId);
+    closeSidebar(); // close mobile sidebar if open
+
+    // Lazy chart resize when page becomes visible
+    requestAnimationFrame(() => {
+        if (pageId === 'dashboard' && appState.chartInstance) {
+            appState.chartInstance.resize();
+        }
+        if (pageId === 'analytics' && window._roiChart) {
+            window._roiChart.resize();
+        }
+    });
+}
+
+function toggleSidebar() {
+    document.getElementById('appLayout').classList.toggle('sidebar-collapsed');
+    localStorage.setItem('mma_sidebar_collapsed',
+        document.getElementById('appLayout').classList.contains('sidebar-collapsed'));
+}
+
+function openSidebar() {
+    document.getElementById('sidebar').classList.add('sidebar-open');
+    document.getElementById('sidebarOverlay').classList.add('active');
+}
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('sidebar-open');
+    document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+
+function saveSettings() {
+    const b = parseFloat(document.getElementById('set-banca').value);
+    const u = parseFloat(document.getElementById('set-unit').value) / 100;
+    const t = parseFloat(document.getElementById('set-target').value);
+    if (!isNaN(b)) appState.globals.bancaInicial = b;
+    if (!isNaN(u)) appState.globals.unitSize = u;
+    if (!isNaN(t)) appState.globals.targetUnits = t;
+    localStorage.setItem('mma_settings', JSON.stringify({
+        bancaInicial: appState.globals.bancaInicial,
+        unitSize: appState.globals.unitSize,
+        targetUnits: appState.globals.targetUnits
+    }));
+    updateUI();
+    // Show save confirmation
+    const btn = document.querySelector('.btn-save');
+    if (btn) { btn.textContent = '✓ Salvo'; setTimeout(() => btn.textContent = 'Salvar', 1500); }
+}
+
+function loadSettings() {
+    try {
+        const s = JSON.parse(localStorage.getItem('mma_settings') || '{}');
+        if (s.bancaInicial) appState.globals.bancaInicial = s.bancaInicial;
+        if (s.unitSize)     appState.globals.unitSize = s.unitSize;
+        if (s.targetUnits)  appState.globals.targetUnits = s.targetUnits;
+    } catch (e) {}
+}
+
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    loadSettings();
+
+    // Restore sidebar collapsed state
+    if (localStorage.getItem('mma_sidebar_collapsed') === 'true') {
+        document.getElementById('appLayout').classList.add('sidebar-collapsed');
+    }
+
+    // Restore last page
+    const lastPage = localStorage.getItem('mma_last_page') || 'dashboard';
+    navigateTo(lastPage);
+
     fetchSheetData();
     fetchDolar();
     document.getElementById('searchFight').addEventListener('input', e => renderTable(e.target.value));
 
-    // Configura os botões de abas
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -40,11 +128,16 @@ function fetchDolar() {
             const rate = parseFloat(data.USDBRL.bid);
             if (rate > 0) {
                 appState.globals.dolarHoje = rate;
-                document.getElementById('val-dolar-hoje').innerText = 'R$ ' + rate.toFixed(2);
+                const txt = 'R$ ' + rate.toFixed(2);
+                const el1 = document.getElementById('val-dolar-hoje');
+                const el2 = document.getElementById('val-dolar-topbar');
+                if (el1) el1.innerText = txt;
+                if (el2) el2.innerText = txt;
             }
         })
         .catch(() => {
-            document.getElementById('val-dolar-hoje').innerText = 'R$ --';
+            const el = document.getElementById('val-dolar-hoje');
+            if (el) el.innerText = 'R$ --';
         });
 }
 
@@ -78,7 +171,7 @@ function fetchSheetData() {
 // ─── PROCESSAMENTO ────────────────────────────────────────────────────────────
 /**
  * Estrutura real da planilha (validada via API):
- * 
+ *
  * Linha 0: [null, "Banca Inicial", "500", null, "Dolar Hoje", 5.1311, ...]
  * Linha 1: [null, "Target Units", "1,5", ...]
  * Linha 2: [null, "Unit Size", "0,01", ...]
@@ -108,11 +201,10 @@ function processData(table) {
         return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
     };
 
-    // Valores fixos de configuração (hardcoded — não mudam com frequência)
-    appState.globals.bancaInicial = 500;
-    appState.globals.targetUnits = 1.5;
-    appState.globals.unitSize = 0.01;
-
+    // Use localStorage values if set; otherwise fall back to sheet defaults
+    if (!appState.globals.bancaInicial) appState.globals.bancaInicial = 500;
+    if (!appState.globals.targetUnits)  appState.globals.targetUnits  = 1.5;
+    if (!appState.globals.unitSize)     appState.globals.unitSize      = 0.01;
 
     // Apostas começam na linha 4 (índice 4), pois linha 3 é cabeçalho
     appState.bets = [];
@@ -197,6 +289,66 @@ function updateUI() {
     // Analytics — compute once, render once
     appState.analytics = computeAnalytics(appState.bets);
     renderAnalytics(appState.analytics);
+
+    // Dashboard recent / upcoming bets
+    renderDashboardRecent();
+
+    // Populate settings inputs
+    const setBanca  = document.getElementById('set-banca');
+    const setUnit   = document.getElementById('set-unit');
+    const setTarget = document.getElementById('set-target');
+    if (setBanca)  setBanca.value  = appState.globals.bancaInicial;
+    if (setUnit)   setUnit.value   = (appState.globals.unitSize * 100).toFixed(1);
+    if (setTarget) setTarget.value = appState.globals.targetUnits;
+
+    // Update top-bar dolar
+    const topbarDolar = document.getElementById('val-dolar-topbar');
+    if (topbarDolar && appState.globals.dolarHoje) {
+        topbarDolar.textContent = 'R$ ' + appState.globals.dolarHoje.toFixed(2);
+    }
+}
+
+// ─── DASHBOARD RECENT BETS ────────────────────────────────────────────────────
+function renderDashboardRecent() {
+    // Recent bets (last 5 finished)
+    const recentEl = document.getElementById('recentBetsWrap');
+    if (recentEl) {
+        const recent = appState.bets.filter(b => b.result === 'W' || b.result === 'L').slice(0, 5);
+        if (!recent.length) {
+            recentEl.innerHTML = '<p class="empty-state-msg">Sem apostas finalizadas.</p>';
+        } else {
+            recentEl.innerHTML = recent.map(b => {
+                const badge = b.result === 'W'
+                    ? '<span class="result-badge badge-win">WIN</span>'
+                    : '<span class="result-badge badge-loss">LOSS</span>';
+                const plCls = b.result === 'W' ? 'text-gold' : 'text-red';
+                const plTxt = (b.result === 'W' ? '+' : '') + fmt(b.plUSD);
+                return `<div class="recent-bet-row">
+                    ${badge}
+                    <span class="recent-bet-fight">${b.fight || '--'}</span>
+                    <span class="${plCls}">${plTxt}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    // Upcoming bets
+    const upcomingEl = document.getElementById('upcomingBetsWrap');
+    if (upcomingEl) {
+        const upcoming = appState.bets.filter(b => b.result === '-');
+        if (!upcoming.length) {
+            upcomingEl.innerHTML = '<p class="empty-state-msg">Nenhuma aposta em andamento.</p>';
+        } else {
+            upcomingEl.innerHTML = upcoming.map(b => {
+                const oddsDisplay = b.odds > 0 ? b.odds.toFixed(3) : '--';
+                return `<div class="recent-bet-row">
+                    <span class="result-badge badge-pending">PEND.</span>
+                    <span class="recent-bet-fight">${b.fight || '--'}</span>
+                    <span style="color:var(--text-muted);font-size:13px">${oddsDisplay}</span>
+                </div>`;
+            }).join('');
+        }
+    }
 }
 
 // ─── TABELA ───────────────────────────────────────────────────────────────────
