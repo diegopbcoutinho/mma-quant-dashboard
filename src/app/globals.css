@@ -1592,6 +1592,40 @@ td.evt-name {
 }
 
 /* ============================================================
+   STAKE MODE TOGGLE (USD / Units switch in bet modal)
+   ============================================================ */
+
+.stake-mode-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.stake-mode-btn {
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    transition: background 200ms, color 200ms;
+    letter-spacing: 0.3px;
+}
+
+.stake-mode-btn.active {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--accent-gold);
+}
+
+.stake-mode-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================
    SIMULATOR
    ============================================================ */
 

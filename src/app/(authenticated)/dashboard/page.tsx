@@ -28,6 +28,10 @@ export default function DashboardPage() {
   const losses = metrics?.losses ?? 0;
   const totalBets = metrics?.totalBets ?? 0;
 
+  // Unit value for profit-in-units display
+  const unitValue = globals.bancaInicial * globals.unitSize;
+  const profitInUnits = unitValue > 0 ? totalPL / unitValue : 0;
+
   const upcoming = bets.filter((b) => b.result === '-');
   const allFinished = bets.filter((b) => b.result === 'W' || b.result === 'L');
   const recent = allFinished.slice(0, Math.max(upcoming.length, 1));
@@ -72,7 +76,13 @@ export default function DashboardPage() {
             {totalPL > 0 ? '+' : ''}
             {fmt(totalPL)}
           </div>
-          <div className="kpi-subtitle">Total Profit</div>
+          <div className="kpi-subtitle">
+            {unitValue > 0 ? (
+              <span>
+                {profitInUnits >= 0 ? '+' : ''}{profitInUnits.toFixed(2)}u
+              </span>
+            ) : 'Total Profit'}
+          </div>
         </div>
 
         <div className="kpi-card glass-panel">
@@ -103,12 +113,12 @@ export default function DashboardPage() {
           <span className="value">${globals.bancaInicial.toFixed(2)}</span>
         </div>
         <div className="control-group">
-          <span className="label">Target Units</span>
-          <span className="value">{globals.targetUnits.toFixed(2)}</span>
-        </div>
-        <div className="control-group">
           <span className="label">Unit Size</span>
           <span className="value">{(globals.unitSize * 100).toFixed(1)}%</span>
+        </div>
+        <div className="control-group">
+          <span className="label">1 Unit</span>
+          <span className="value">${unitValue.toFixed(2)}</span>
         </div>
       </section>
 

@@ -10,14 +10,12 @@ export default function SettingsPage() {
 
   const [banca, setBanca] = useState('');
   const [unit, setUnit] = useState('');
-  const [target, setTarget] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setBanca(String(globals.bancaInicial));
     setUnit(String((globals.unitSize * 100).toFixed(1)));
-    setTarget(String(globals.targetUnits));
   }, [globals, settings]);
 
   const handleSave = async () => {
@@ -27,7 +25,7 @@ export default function SettingsPage() {
     await saveSettings(user.id, {
       initial_bankroll: parseFloat(banca) || 500,
       unit_size: (parseFloat(unit) || 1) / 100,
-      target_units: parseFloat(target) || 1.5,
+      target_units: 0,
       currency: 'USD',
     });
 
@@ -87,20 +85,17 @@ export default function SettingsPage() {
               onChange={(e) => setUnit(e.target.value)}
             />
             <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-              Percentage of bankroll per unit. E.g. 1% of $500 = $5 per unit.
+              Percentage of bankroll per unit.
             </span>
-          </div>
-          <div className="settings-field">
-            <label htmlFor="set-target">Target Units</label>
-            <input
-              type="number"
-              id="set-target"
-              className="settings-input"
-              placeholder="1.5"
-              step="0.1"
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-            />
+            <div style={{
+              marginTop: 10, padding: '10px 14px', background: 'rgba(212,175,55,0.08)',
+              borderRadius: 8, border: '1px solid rgba(212,175,55,0.15)',
+            }}>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>1 Unit = </span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-gold)' }}>
+                ${((parseFloat(unit) || 1) / 100 * (parseFloat(banca) || 500)).toFixed(2)}
+              </span>
+            </div>
           </div>
         </section>
 

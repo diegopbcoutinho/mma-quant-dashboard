@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useBetsStore } from '@/stores/useBetsStore';
 import type { Bet } from '@/types';
+
+type StakeMode = 'usd' | 'units';
 
 interface BetModalProps {
   onClose: () => void;
@@ -12,7 +14,7 @@ interface BetModalProps {
 
 export default function BetModal({ onClose, editBet }: BetModalProps) {
   const { user } = useAuthStore();
-  const { addBet, editBet: updateBet } = useBetsStore();
+  const { addBet, editBet: updateBet, settings, globals } = useBetsStore();
   const isEdit = !!editBet;
 
   const [eventName, setEventName] = useState('');
@@ -20,10 +22,25 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
   const [fighter, setFighter] = useState('');
   const [opponent, setOpponent] = useState('');
   const [odds, setOdds] = useState('');
-  const [stakeUsd, setStakeUsd] = useState('');
+  const [stakeInput, setStakeInput] = useState('');
+  const [stakeMode, setStakeMode] = useState<StakeMode>('usd');
   const [result, setResult] = useState<'' | 'W' | 'L' | '-'>('-');
   const [submitting, setSubmitting] = useState(false);
 
+  // Calculate 1 unit value in USD
+  const unitValue = useMemo(() => {
+    const bankroll = settings?.initial_bankroll ?? globals.bancaInicial;
+    const unitPct = settings?.unit_size ?? globals.unitSize;
+    return bankroll * unitPct;
+  }, [settings, globals]);
+
+  // Resolve actual USD stake from input
+  const resolvedStakeUsd = useMemo(() => {
+    const val = parseFloat(stakeInput) || 0;
+    return stakeMode === 'units' ? val * unitValue : val;
+  }, [stakeInput, stakeMode, unitValue]);
+
+  // Pre-fill fields when editing
   useEffect(() => {
     if (editBet) {
       setEventName(editBet.event_name || '');
@@ -31,10 +48,22 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
       setFighter(editBet.fighter || '');
       setOpponent(editBet.opponent || '');
       setOdds(editBet.odds ? String(editBet.odds) : '');
-      setStakeUsd(editBet.stake_usd ? String(editBet.stake_usd) : '');
+      setStakeInput(editBet.stake_usd ? String(editBet.stake_usd) : '');
+      setStakeMode('usd');
       setResult((editBet.result as '' | 'W' | 'L' | '-') || '-');
     }
   }, [editBet]);
+
+  // When toggling mode, convert the current value
+  const handleModeSwitch = (mode: StakeMode) => {
+    const val = parseFloat(stakeInput) || 0;
+    if (mode === 'units' && stakeMode === 'usd' && unitValue > 0) {
+      setStakeInput((val / unitValue).toFixed(2));
+    } else if (mode === 'usd' && stakeMode === 'units') {
+      setStakeInput((val * unitValue).toFixed(2));
+    }
+    setStakeMode(mode);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +72,7 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
     setSubmitting(true);
 
     const oddsNum = parseFloat(odds);
-    const stakeNum = parseFloat(stakeUsd);
+    const stakeNum = resolvedStakeUsd;
 
     let plUsd = 0;
     if (result === 'W') plUsd = stakeNum * (oddsNum - 1);
@@ -151,17 +180,46 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
                 required
               />
             </div>
+
+            {/* Stake field with USD/Units toggle */}
             <div className="modal-field">
-              <label>Stake (USD)</label>
+              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Stake</span>
+                <div className="stake-mode-toggle">
+                  <button
+                    type="button"
+                    className={`stake-mode-btn ${stakeMode === 'usd' ? 'active' : ''}`}
+                    onClick={() => handleModeSwitch('usd')}
+                  >
+                    USD
+                  </button>
+                  <button
+                    type="button"
+                    className={`stake-mode-btn ${stakeMode === 'units' ? 'active' : ''}`}
+                    onClick={() => handleModeSwitch('units')}
+                  >
+                    Units
+                  </button>
+                </div>
+              </label>
               <input
                 className="auth-input"
                 type="number"
-                step="0.01"
-                value={stakeUsd}
-                onChange={(e) => setStakeUsd(e.target.value)}
-                placeholder="5.00"
+                step={stakeMode === 'units' ? '0.5' : '0.01'}
+                value={stakeInput}
+                onChange={(e) => setStakeInput(e.target.value)}
+                placeholder={stakeMode === 'units' ? '1.0' : '5.00'}
                 required
               />
+              {/* Preview: show converted value */}
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
+                {stakeMode === 'units'
+                  ? `= $${resolvedStakeUsd.toFixed(2)} (1u = $${unitValue.toFixed(2)})`
+                  : unitValue > 0
+                    ? `= ${(resolvedStakeUsd / unitValue).toFixed(2)}u`
+                    : ''
+                }
+              </span>
             </div>
           </div>
 
