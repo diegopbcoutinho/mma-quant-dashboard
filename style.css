@@ -44,6 +44,7 @@ body {
         radial-gradient(circle at 15% 50%, rgba(230, 57, 70, 0.03) 0%, transparent 50%),
         radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.03) 0%, transparent 50%);
     min-height: 100vh;
+    overflow-x: hidden;   /* prevent any child from creating horizontal scroll */
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -274,6 +275,8 @@ body {
     flex-direction: column;
     transition: margin-left 200ms ease;
     min-width: 0;
+    overflow-x: hidden;   /* clip any overflowing child */
+    max-width: 100%;
 }
 
 /* ── Top bar ── */
@@ -349,6 +352,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .page-hidden {
@@ -374,6 +380,12 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
+    min-width: 0;
+}
+
+.dashboard-bottom-grid .glass-panel {
+    min-width: 0;
+    overflow: hidden;
 }
 
 .recent-bet-row {
@@ -647,7 +659,7 @@ body {
 /* KPIs */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 45%), 1fr));
     gap: 24px;
 }
 

@@ -313,7 +313,7 @@ function renderDashboardRecent() {
     // Recent bets (last 5 finished)
     const recentEl = document.getElementById('recentBetsWrap');
     if (recentEl) {
-        const recent = appState.bets.filter(b => b.result === 'W' || b.result === 'L').slice(0, 5);
+        const recent = appState.bets.filter(b => b.result === 'W' || b.result === 'L');
         if (!recent.length) {
             recentEl.innerHTML = '<p class="empty-state-msg">Sem apostas finalizadas.</p>';
         } else {
