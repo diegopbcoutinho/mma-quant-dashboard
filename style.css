@@ -705,41 +705,6 @@ td.evt-name {
     border-color: rgba(212, 175, 55, 0.4);
 }
 
-@media (max-width: 900px) {
-    .analytics-insights-row {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .analytics-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .analytics-block-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .analytics-mini-tabs {
-        width: 100%;
-        justify-content: stretch;
-    }
-
-    .analytics-mini-tab {
-        flex: 1;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .analytics-insights-row {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .aic-value {
-        font-size: 22px;
-    }
-}
-
 .loading-cell {
     text-align: center;
     padding: 40px !important;
@@ -747,25 +712,100 @@ td.evt-name {
     font-style: italic;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .kpi-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════ */
 
-    .panel-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .search-input {
-        width: 100%;
-    }
+/* ── 900px: analytics grid stacks ── */
+@media (max-width: 900px) {
+    .analytics-grid             { grid-template-columns: 1fr; }
+    .analytics-block-header     { flex-direction: column; align-items: flex-start; }
+    .analytics-mini-tabs        { width: 100%; }
+    .analytics-mini-tab         { flex: 1; justify-content: center; }
 }
 
+/* ── 768px: tablet / large phone ── */
+@media (max-width: 768px) {
+    /* Container */
+    .app-container      { padding: 14px; gap: 20px; }
+    .dashboard-content  { gap: 20px; }
+
+    /* Header */
+    .top-nav            { padding: 12px 16px; }
+    .logo h1            { font-size: 20px; }
+    .logo i             { font-size: 22px; }
+    .system-status      { font-size: 12px; }
+
+    /* Global controls: 2×2 grid */
+    .global-controls    { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; }
+    .control-group .value { font-size: 20px; }
+
+    /* KPIs */
+    .kpi-grid           { grid-template-columns: 1fr 1fr; gap: 14px; }
+    .kpi-card           { padding: 18px 16px; gap: 8px; }
+    .kpi-value          { font-size: 28px; }
+
+    /* Bankroll chart */
+    .chart-section      { padding: 16px; }
+    .chart-container    { height: 260px; }
+
+    /* Fights panel */
+    .fights-section     { padding: 16px; }
+    .panel-header       { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+    .tab-btn            { font-size: 13px; padding: 6px 10px; }
+    .search-input       { width: 100%; }
+    th, td              { padding: 10px 12px; }
+    td                  { font-size: 13px; }
+
+    /* Future summary bar */
+    .future-summary-item  { padding: 10px 14px; }
+    .future-summary-value { font-size: 1.1rem; }
+
+    /* Analytics panel */
+    .analytics-section          { padding: 16px; }
+    .analytics-insights-row     { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .analytics-insight-card     { padding: 14px 12px; }
+    .aic-value                  { font-size: 24px; }
+    .analytics-block            { padding: 16px; }
+    .analytics-chart-wrap       { height: 170px; }
+    .fighter-cell-name          { max-width: 110px; }
+}
+
+/* ── 480px: small phones ── */
 @media (max-width: 480px) {
-    .kpi-grid {
-        grid-template-columns: 1fr;
-    }
+    /* Container */
+    .app-container      { padding: 10px; gap: 14px; }
+    .dashboard-content  { gap: 14px; }
+
+    /* Header — hide "Live Data Sync" text label, keep dot */
+    .system-status span:not(.pulse-dot) { display: none; }
+
+    /* KPIs: 2 columns still readable at this size */
+    .kpi-grid           { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kpi-card           { padding: 14px 12px; gap: 6px; }
+    .kpi-value          { font-size: 22px; }
+    .kpi-header         { font-size: 12px; }
+    .kpi-subtitle       { font-size: 11px; }
+
+    /* Bankroll chart */
+    .chart-container    { height: 200px; }
+
+    /* Table */
+    th                  { font-size: 11px; padding: 8px 10px; }
+    td                  { font-size: 12px; padding: 8px 10px; }
+    .tab-btn            { font-size: 12px; padding: 5px 8px; }
+
+    /* Future summary: stack vertically */
+    .future-summary-bar     { flex-direction: column; }
+    .future-summary-item    { border-right: none; border-bottom: 1px solid var(--border-color); padding: 10px 16px; }
+    .future-summary-item:last-child { border-bottom: none; }
+
+    /* Analytics */
+    .analytics-insights-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .analytics-insight-card { padding: 12px 10px; gap: 8px; }
+    .aic-icon               { font-size: 16px; min-width: 18px; }
+    .aic-value              { font-size: 20px; }
+    .aic-unit               { white-space: normal; }
+    .analytics-chart-wrap   { height: 150px; }
+    .fighter-cell-name      { max-width: 90px; }
 }

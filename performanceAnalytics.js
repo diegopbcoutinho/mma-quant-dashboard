@@ -329,7 +329,7 @@ function renderFighterTable(fighterStats, showAll) {
     const wrap = document.getElementById('profitByEventWrap');
     if (!wrap) return;
 
-    const LIMIT   = 8;
+    const LIMIT   = 5;
     const data    = showAll ? fighterStats : fighterStats.slice(0, LIMIT);
     const hasMore = fighterStats.length > LIMIT;
 
