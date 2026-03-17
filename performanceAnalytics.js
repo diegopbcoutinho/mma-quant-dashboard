@@ -4,6 +4,15 @@
  * Runs once after data load; results stored in appState.analytics.
  */
 
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+/** Extracts the picked fighter: first name before " vs " in the fight string. */
+function _pickedFighter(fight) {
+    if (!fight) return null;
+    const vsIdx = fight.toLowerCase().indexOf(' vs ');
+    return vsIdx > 0 ? fight.slice(0, vsIdx).trim() : fight.trim();
+}
+
 // ─── COMPUTATION ──────────────────────────────────────────────────────────────
 
 function computeAnalytics(bets) {
@@ -28,13 +37,13 @@ function computeAnalytics(bets) {
         const stake  = items.reduce((acc, x) => acc + x.stakeUSD, 0);
         const profit = items.reduce((acc, x) => acc + x.plUSD,    0);
         return {
-            label:      b.label,
-            count:      items.length,
+            label:       b.label,
+            count:       items.length,
             wins,
-            losses:     items.length - wins,
-            winRate:    items.length > 0 ? (wins / items.length) * 100 : 0,
+            losses:      items.length - wins,
+            winRate:     items.length > 0 ? (wins / items.length) * 100 : 0,
             totalProfit: profit,
-            roi:        stake > 0 ? (profit / stake) * 100 : 0
+            roi:         stake > 0 ? (profit / stake) * 100 : 0
         };
     });
 
@@ -42,9 +51,10 @@ function computeAnalytics(bets) {
     const eventMap = {};
     settled.forEach(b => {
         const key = b.event || 'Unknown';
-        if (!eventMap[key]) eventMap[key] = { bets: 0, wins: 0, profit: 0 };
+        if (!eventMap[key]) eventMap[key] = { bets: 0, wins: 0, stake: 0, profit: 0 };
         eventMap[key].bets++;
         if (b.result === 'W') eventMap[key].wins++;
+        eventMap[key].stake  += b.stakeUSD;
         eventMap[key].profit += b.plUSD;
     });
 
@@ -54,11 +64,36 @@ function computeAnalytics(bets) {
             bets:    d.bets,
             wins:    d.wins,
             winRate: (d.wins / d.bets) * 100,
-            profit:  d.profit
+            profit:  d.profit,
+            roi:     d.stake > 0 ? (d.profit / d.stake) * 100 : 0
         }))
         .sort((a, b) => b.profit - a.profit);
 
-    // 3. Streaks (chronological → current = most recent)
+    // 3. Profit by fighter
+    const fighterMap = {};
+    settled.forEach(b => {
+        const fighter = _pickedFighter(b.fight);
+        if (!fighter) return;
+        if (!fighterMap[fighter]) fighterMap[fighter] = { bets: 0, wins: 0, stake: 0, profit: 0 };
+        fighterMap[fighter].bets++;
+        if (b.result === 'W') fighterMap[fighter].wins++;
+        fighterMap[fighter].stake  += b.stakeUSD;
+        fighterMap[fighter].profit += b.plUSD;
+    });
+
+    const fighterStats = Object.entries(fighterMap)
+        .map(([fighter, d]) => ({
+            fighter,
+            bets:    d.bets,
+            wins:    d.wins,
+            losses:  d.bets - d.wins,
+            winRate: (d.wins / d.bets) * 100,
+            profit:  d.profit,
+            roi:     d.stake > 0 ? (d.profit / d.stake) * 100 : 0
+        }))
+        .sort((a, b) => b.profit - a.profit);
+
+    // 4. Streaks (chronological → current = most recent)
     let longestWin = 0, longestLoss = 0, tmpW = 0, tmpL = 0;
     settled.forEach(b => {
         if (b.result === 'W') { tmpW++; tmpL = 0; longestWin  = Math.max(longestWin,  tmpW); }
@@ -66,13 +101,13 @@ function computeAnalytics(bets) {
     });
 
     let curStreak = 0, curType = null;
-    for (const b of [...settled].reverse()) { // most-recent first
-        if (!curType)              { curType = b.result; curStreak = 1; }
+    for (const b of [...settled].reverse()) {
+        if (!curType)                  { curType = b.result; curStreak = 1; }
         else if (b.result === curType) curStreak++;
         else break;
     }
 
-    // 4. Max drawdown
+    // 5. Max drawdown
     let peak = 0, maxDD = 0, maxDDPct = 0;
     settled.filter(b => b.bankrollAfter > 0).forEach(b => {
         if (b.bankrollAfter > peak) peak = b.bankrollAfter;
@@ -80,7 +115,7 @@ function computeAnalytics(bets) {
         if (dd > maxDD) { maxDD = dd; maxDDPct = (dd / peak) * 100; }
     });
 
-    // 5. Avg odds W vs L
+    // 6. Avg odds W vs L
     const winBets  = settled.filter(b => b.result === 'W');
     const lossBets = settled.filter(b => b.result === 'L');
     const avgOddsWin  = winBets.length  ? winBets.reduce( (s, b) => s + b.odds, 0) / winBets.length  : 0;
@@ -90,7 +125,15 @@ function computeAnalytics(bets) {
         .filter(b => b.count > 0)
         .sort((a, b) => b.roi - a.roi)[0] || null;
 
-    return { roiByOdds, profitByEvent, streaks: { current: curStreak, currentType: curType, longestWin, longestLoss }, drawdown: { peak, maxDD, maxDDPct }, avgOdds: { win: avgOddsWin, loss: avgOddsLoss }, bestRange };
+    return {
+        roiByOdds,
+        profitByEvent,
+        fighterStats,
+        streaks:  { current: curStreak, currentType: curType, longestWin, longestLoss },
+        drawdown: { peak, maxDD, maxDDPct },
+        avgOdds:  { win: avgOddsWin, loss: avgOddsLoss },
+        bestRange
+    };
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
@@ -112,27 +155,29 @@ function renderAnalytics(analytics) {
     renderProfitTable(analytics.profitByEvent, false);
 }
 
-function _renderInsightCards({ streaks, drawdown, bestRange, avgOdds }) {
+// ─── INSIGHT CARDS ────────────────────────────────────────────────────────────
+
+function _renderInsightCards({ streaks, drawdown, bestRange }) {
     const el = document.getElementById('analyticsInsights');
     if (!el) return;
 
     const cards = [
         {
-            icon:  'fa-solid fa-trophy',
-            color: 'var(--accent-gold)',
-            label: 'Maior Série Win',
-            value: streaks.longestWin,
-            unit:  'seguidas',
-            gold:  true,
+            icon:    'fa-solid fa-trophy',
+            color:   'var(--accent-gold)',
+            label:   'Maior Série Win',
+            value:   streaks.longestWin,
+            unit:    'seguidas',
+            gold:    true,
             countup: true
         },
         {
-            icon:  'fa-solid fa-skull',
-            color: 'var(--accent-red)',
-            label: 'Maior Série Loss',
-            value: streaks.longestLoss,
-            unit:  'seguidas',
-            gold:  false,
+            icon:    'fa-solid fa-skull',
+            color:   'var(--accent-red)',
+            label:   'Maior Série Loss',
+            value:   streaks.longestLoss,
+            unit:    'seguidas',
+            gold:    false,
             countup: true
         },
         {
@@ -153,7 +198,7 @@ function _renderInsightCards({ streaks, drawdown, bestRange, avgOdds }) {
         }
     ];
 
-    el.innerHTML = cards.map((c, i) => `
+    el.innerHTML = cards.map(c => `
         <div class="analytics-insight-card">
             <div class="aic-icon"><i class="${c.icon}" style="color:${c.color}"></i></div>
             <div class="aic-body">
@@ -167,41 +212,34 @@ function _renderInsightCards({ streaks, drawdown, bestRange, avgOdds }) {
         </div>
     `).join('');
 
-    // Count-up animation for integer values
-    el.querySelectorAll('[data-target]').forEach(el => {
-        const target = parseInt(el.dataset.target, 10);
-        const duration = 600;
-        const start = performance.now();
-        const tick = now => {
-            const p = Math.min((now - start) / duration, 1);
-            el.textContent = Math.round(p * target);
+    el.querySelectorAll('[data-target]').forEach(node => {
+        const target = parseInt(node.dataset.target, 10);
+        const start  = performance.now();
+        const tick   = now => {
+            const p = Math.min((now - start) / 600, 1);
+            node.textContent = Math.round(p * target);
             if (p < 1) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
     });
 }
 
+// ─── ROI CHART ────────────────────────────────────────────────────────────────
+
 function _renderRoiChart(roiByOdds) {
     const ctx = document.getElementById('roiByOddsChart');
     if (!ctx) return;
     if (_roiChart) _roiChart.destroy();
 
-    const values  = roiByOdds.map(b => parseFloat(b.roi.toFixed(1)));
-    const bgColors = values.map(v => v >= 0 ? 'rgba(212,175,55,0.80)' : 'rgba(230,57,70,0.80)');
+    const values   = roiByOdds.map(b => parseFloat(b.roi.toFixed(1)));
+    const bgColors = values.map(v => v >= 0 ? 'rgba(212,175,55,0.82)' : 'rgba(230,57,70,0.82)');
     const borders  = values.map(v => v >= 0 ? '#D4AF37' : '#E63946');
 
     _roiChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: roiByOdds.map(b => b.label),
-            datasets: [{
-                data: values,
-                backgroundColor: bgColors,
-                borderColor: borders,
-                borderWidth: 1.5,
-                borderRadius: 6,
-                borderSkipped: false
-            }]
+            datasets: [{ data: values, backgroundColor: bgColors, borderColor: borders, borderWidth: 1.5, borderRadius: 6, borderSkipped: false }]
         },
         options: {
             indexAxis: 'y',
@@ -212,39 +250,47 @@ function _renderRoiChart(roiByOdds) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        title: ctx => ctx[0].label,
-                        label: ctx => {
-                            const b = roiByOdds[ctx.dataIndex];
-                            return [
-                                ` ROI: ${b.roi.toFixed(1)}%`,
-                                ` ${b.wins}W / ${b.losses}L de ${b.count} apostas`,
-                                ` Win Rate: ${b.winRate.toFixed(1)}%`
-                            ];
+                        title: c => c[0].label,
+                        label: c => {
+                            const b = roiByOdds[c.dataIndex];
+                            return [` ROI: ${b.roi.toFixed(1)}%`, ` ${b.wins}W / ${b.losses}L de ${b.count} apostas`, ` Win Rate: ${b.winRate.toFixed(1)}%`];
                         }
                     },
-                    backgroundColor: 'rgba(15,15,18,0.96)',
-                    titleColor: '#fff',
-                    bodyColor: '#aaa',
-                    borderColor: 'rgba(212,175,55,0.25)',
-                    borderWidth: 1,
-                    padding: 12
+                    backgroundColor: 'rgba(15,15,18,0.96)', titleColor: '#fff', bodyColor: '#aaa',
+                    borderColor: 'rgba(212,175,55,0.25)', borderWidth: 1, padding: 12
                 }
             },
             scales: {
-                x: {
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#888891', callback: v => v + '%' }
-                },
-                y: {
-                    grid: { display: false },
-                    ticks: { color: '#bbb', font: { size: 12, family: 'Inter' } }
-                }
+                x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#888891', callback: v => v + '%' } },
+                y: { grid: { display: false }, ticks: { color: '#bbb', font: { size: 12, family: 'Inter' } } }
             }
         }
     });
 }
 
-// Public — called by toggle button
+// ─── TAB SWITCHER ─────────────────────────────────────────────────────────────
+
+/** Called by the mini tab buttons in the right analytics block. */
+function switchProfitTab(mode, btn) {
+    btn.closest('.analytics-mini-tabs').querySelectorAll('.analytics-mini-tab')
+        .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const wrap = document.getElementById('profitByEventWrap');
+    wrap.style.opacity = '0';
+
+    setTimeout(() => {
+        if (mode === 'event') {
+            renderProfitTable(appState.analytics.profitByEvent, false);
+        } else {
+            renderFighterTable(appState.analytics.fighterStats, false);
+        }
+        wrap.style.opacity = '1';
+    }, 160);
+}
+
+// ─── PROFIT BY EVENT TABLE ────────────────────────────────────────────────────
+
 function renderProfitTable(profitByEvent, showAll) {
     const wrap = document.getElementById('profitByEventWrap');
     if (!wrap) return;
@@ -271,12 +317,50 @@ function renderProfitTable(profitByEvent, showAll) {
     wrap.innerHTML = `
         <div class="analytics-table-scroll">
             <table class="analytics-inner-table">
-                <thead><tr>
-                    <th>Evento</th><th>Apostas</th><th>Win%</th><th>Profit</th>
-                </tr></thead>
+                <thead><tr><th>Evento</th><th>Apostas</th><th>Win%</th><th>Profit</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
-        </div>
-        ${btn}
-    `;
+        </div>${btn}`;
+}
+
+// ─── PROFIT BY FIGHTER TABLE ──────────────────────────────────────────────────
+
+function renderFighterTable(fighterStats, showAll) {
+    const wrap = document.getElementById('profitByEventWrap');
+    if (!wrap) return;
+
+    const LIMIT   = 8;
+    const data    = showAll ? fighterStats : fighterStats.slice(0, LIMIT);
+    const hasMore = fighterStats.length > LIMIT;
+
+    const rows = data.map(f => {
+        const profitCls = f.profit >= 0 ? 'text-gold' : 'text-red';
+        const sign      = f.profit >= 0 ? '+' : '';
+        const wrCls     = f.winRate >= 60 ? 'wr-gold' : f.winRate < 40 ? 'wr-red' : '';
+        // Avatar initials: first letter of each word, max 2 chars
+        const initials  = f.fighter.split(' ').map(n => n[0] || '').join('').slice(0, 2).toUpperCase();
+        const avatarCls = f.profit >= 0 ? 'fighter-avatar--gold' : 'fighter-avatar--red';
+        return `<tr>
+            <td class="fighter-cell">
+                <span class="fighter-avatar ${avatarCls}">${initials}</span>
+                <span class="fighter-cell-name" title="${f.fighter}">${f.fighter}</span>
+            </td>
+            <td>${f.bets}</td>
+            <td class="${wrCls}">${f.winRate.toFixed(0)}%</td>
+            <td class="${profitCls}">${sign}$${f.profit.toFixed(2)}</td>
+        </tr>`;
+    }).join('');
+
+    const btn = hasMore ? `
+        <button class="view-all-btn" onclick="renderFighterTable(appState.analytics.fighterStats, ${!showAll})">
+            ${showAll ? '↑ Ver menos' : `↓ Ver todos (${fighterStats.length})`}
+        </button>` : '';
+
+    wrap.innerHTML = `
+        <div class="analytics-table-scroll">
+            <table class="analytics-inner-table">
+                <thead><tr><th>Lutador</th><th>Apostas</th><th>Win%</th><th>Profit</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>${btn}`;
 }

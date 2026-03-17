@@ -523,6 +523,109 @@ tr:hover td {
     padding: 20px;
 }
 
+/* Right block: header row with title + mini tab switcher */
+.analytics-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* When block-header is used, block-title has no bottom margin */
+.analytics-block-header .analytics-block-title {
+    margin-bottom: 0;
+}
+
+/* Mini tab switcher */
+.analytics-mini-tabs {
+    display: flex;
+    gap: 0;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 3px;
+    flex-shrink: 0;
+}
+
+.analytics-mini-tab {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.analytics-mini-tab:hover {
+    color: var(--text-primary);
+}
+
+.analytics-mini-tab.active {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--accent-gold);
+    border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+/* Fade transition on the content container */
+#profitByEventWrap {
+    transition: opacity 0.16s ease;
+}
+
+/* Fighter table: cell with avatar */
+.fighter-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.fighter-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    flex-shrink: 0;
+    letter-spacing: 0;
+}
+
+.fighter-avatar--gold {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--accent-gold);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.fighter-avatar--red {
+    background: rgba(230, 57, 70, 0.12);
+    color: var(--accent-red);
+    border: 1px solid rgba(230, 57, 70, 0.25);
+}
+
+.fighter-cell-name {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 130px;
+}
+
+/* Winrate tint classes */
+.wr-gold { color: var(--accent-gold); }
+.wr-red  { color: var(--accent-red);  }
+
 .analytics-block-title {
     font-size: 12px;
     font-weight: 600;
@@ -609,6 +712,21 @@ td.evt-name {
 
     .analytics-grid {
         grid-template-columns: 1fr;
+    }
+
+    .analytics-block-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .analytics-mini-tabs {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .analytics-mini-tab {
+        flex: 1;
+        justify-content: center;
     }
 }
 

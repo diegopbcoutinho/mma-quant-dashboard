@@ -123,8 +123,22 @@
                         </div>
                     </div>
                     <div class="analytics-block">
-                        <div class="analytics-block-title">
-                            <i class="fa-solid fa-ranking-star"></i> Lucro por Evento
+                        <div class="analytics-block-header">
+                            <div class="analytics-block-title">
+                                <i class="fa-solid fa-ranking-star"></i> Análise por Grupo
+                            </div>
+                            <div class="analytics-mini-tabs">
+                                <button class="analytics-mini-tab active" onclick="switchProfitTab('event', this)">
+                                    Por Evento
+                                </button>
+                                <button class="analytics-mini-tab" onclick="switchProfitTab('fighter', this)">
+                                    Por Lutador
+                                    <span class="tooltip-wrapper">
+                                        <i class="fa-solid fa-circle-info" style="font-size:9px;margin-left:3px;color:var(--text-muted)"></i>
+                                        <span class="tooltip-text" style="font-size:11px">Rentabilidade histórica apostando em cada lutador.</span>
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                         <div id="profitByEventWrap"></div>
                     </div>
