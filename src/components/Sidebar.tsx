@@ -1,0 +1,92 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { useAuthStore } from '@/stores/useAuthStore';
+
+interface SidebarProps {
+  collapsed: boolean;
+  mobileOpen: boolean;
+  onToggle: () => void;
+  onCloseMobile: () => void;
+}
+
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'fa-house', href: '/dashboard' },
+  { id: 'analytics', label: 'Analytics', icon: 'fa-chart-column', href: '/analytics' },
+  { id: 'bets', label: 'Apostas', icon: 'fa-list-check', href: '/bets' },
+  { id: 'simulator', label: 'Simulador', icon: 'fa-chart-line', href: '/simulator' },
+  { id: 'settings', label: 'Configurações', icon: 'fa-gear', href: '/settings' },
+];
+
+export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile }: SidebarProps) {
+  const pathname = usePathname();
+  const { user, signOut } = useAuthStore();
+
+  const userInitials = user?.email
+    ? user.email.slice(0, 2).toUpperCase()
+    : '??';
+
+  return (
+    <>
+      {/* Mobile overlay */}
+      <div
+        className={`sidebar-overlay ${mobileOpen ? 'active' : ''}`}
+        onClick={onCloseMobile}
+      />
+
+      <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
+        <div className="sidebar-top">
+          <div className="sidebar-logo">
+            <i className="fa-solid fa-hand-fist"></i>
+            <span className="sidebar-logo-text">
+              MMA <strong>QUANT</strong>
+            </span>
+          </div>
+          <button className="sidebar-toggle-btn" onClick={onToggle} title="Recolher sidebar">
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
+        </div>
+
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                data-tooltip={item.label}
+                onClick={onCloseMobile}
+              >
+                <i className={`fa-solid ${item.icon} nav-icon`}></i>
+                <span className="nav-label">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User info */}
+        {user && (
+          <div className="sidebar-user">
+            <span className="sidebar-user-avatar">{userInitials}</span>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-email">{user.email}</div>
+            </div>
+            <button className="btn-logout" onClick={signOut} title="Sair">
+              <i className="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
+        )}
+
+        <div className="sidebar-footer">
+          <div className="sidebar-live">
+            <span className="pulse-dot"></span>
+            <span className="nav-label">Live Sync</span>
+          </div>
+          <div className="sidebar-version">v1.0 SaaS</div>
+        </div>
+      </aside>
+    </>
+  );
+}
