@@ -310,10 +310,29 @@ function updateUI() {
 
 // ─── DASHBOARD RECENT BETS ────────────────────────────────────────────────────
 function renderDashboardRecent() {
-    // Recent bets (last 5 finished)
+    // Upcoming bets (result === '-')
+    const upcomingEl = document.getElementById('upcomingBetsWrap');
+    const upcoming = appState.bets.filter(b => b.result === '-');
+    if (upcomingEl) {
+        if (!upcoming.length) {
+            upcomingEl.innerHTML = '<p class="empty-state-msg">Nenhuma aposta em andamento.</p>';
+        } else {
+            upcomingEl.innerHTML = upcoming.map(b => {
+                const oddsDisplay = b.odds > 0 ? b.odds.toFixed(3) : '--';
+                return `<div class="recent-bet-row">
+                    <span class="result-badge badge-pending">PEND.</span>
+                    <span class="recent-bet-fight">${b.fight || '--'}</span>
+                    <span style="color:var(--text-muted);font-size:13px">${oddsDisplay}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    // Recent finished bets — same count as upcoming for visual symmetry
     const recentEl = document.getElementById('recentBetsWrap');
     if (recentEl) {
-        const recent = appState.bets.filter(b => b.result === 'W' || b.result === 'L');
+        const allFinished = appState.bets.filter(b => b.result === 'W' || b.result === 'L');
+        const recent = allFinished.slice(0, Math.max(upcoming.length, 1));
         if (!recent.length) {
             recentEl.innerHTML = '<p class="empty-state-msg">Sem apostas finalizadas.</p>';
         } else {
@@ -327,24 +346,6 @@ function renderDashboardRecent() {
                     ${badge}
                     <span class="recent-bet-fight">${b.fight || '--'}</span>
                     <span class="${plCls}">${plTxt}</span>
-                </div>`;
-            }).join('');
-        }
-    }
-
-    // Upcoming bets
-    const upcomingEl = document.getElementById('upcomingBetsWrap');
-    if (upcomingEl) {
-        const upcoming = appState.bets.filter(b => b.result === '-');
-        if (!upcoming.length) {
-            upcomingEl.innerHTML = '<p class="empty-state-msg">Nenhuma aposta em andamento.</p>';
-        } else {
-            upcomingEl.innerHTML = upcoming.map(b => {
-                const oddsDisplay = b.odds > 0 ? b.odds.toFixed(3) : '--';
-                return `<div class="recent-bet-row">
-                    <span class="result-badge badge-pending">PEND.</span>
-                    <span class="recent-bet-fight">${b.fight || '--'}</span>
-                    <span style="color:var(--text-muted);font-size:13px">${oddsDisplay}</span>
                 </div>`;
             }).join('');
         }
