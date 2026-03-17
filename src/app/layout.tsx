@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'MMA Quant Strategy Tracker',
-  description: 'Quantitative MMA betting analytics and bankroll tracking',
+  title: 'FightEdge — Build your fight edge.',
+  description: 'Professional MMA betting analytics, bankroll tracking, and simulation',
   icons: { icon: '/favicon.svg' },
 };
 

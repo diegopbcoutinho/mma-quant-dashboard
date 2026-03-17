@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { BRAND } from '@/config/brand';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function LoginPage() {
         <div className="auth-logo">
           <i className="fa-solid fa-hand-fist"></i>
           <span className="auth-logo-text">
-            MMA <strong>QUANT</strong>
+            <strong>{BRAND.name}</strong>
           </span>
         </div>
 

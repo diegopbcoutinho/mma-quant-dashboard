@@ -1,5 +1,5 @@
 /**
- * MMA Quant — Performance Analytics Engine
+ * FightEdge — Performance Analytics Engine
  * Ported from performanceAnalytics.js — pure computation, no DOM.
  */
 

@@ -1,5 +1,5 @@
 /**
- * MMA Quant — Core Type Definitions
+ * FightEdge — Core Type Definitions
  * Architecture: these types are shared across all data providers
  */
 

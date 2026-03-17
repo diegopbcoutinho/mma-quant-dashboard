@@ -32,7 +32,7 @@ function exportBetsCSV(bets: Bet[]) {
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = `mma-quant-bets-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `fightedge-bets-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

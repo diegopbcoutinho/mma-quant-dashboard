@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { BRAND } from '@/config/brand';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -40,7 +41,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
           <div className="sidebar-logo">
             <i className="fa-solid fa-hand-fist"></i>
             <span className="sidebar-logo-text">
-              MMA <strong>QUANT</strong>
+              <strong>{BRAND.name}</strong>
             </span>
           </div>
           <button className="sidebar-toggle-btn" onClick={onToggle} title="Collapse sidebar">
@@ -84,7 +85,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
             <span className="pulse-dot"></span>
             <span className="nav-label">Live Sync</span>
           </div>
-          <div className="sidebar-version">v1.0 SaaS</div>
+          <div className="sidebar-version">{BRAND.version}</div>
         </div>
       </aside>
     </>
