@@ -5,12 +5,6 @@ import { fmt } from '@/lib/helpers';
 import BankrollChart from '@/components/BankrollChart';
 import { KPISkeleton, ChartSkeleton } from '@/components/LoadingSkeleton';
 
-/**
- * Dashboard Page — Sprint 1.5
- *
- * All KPI values now come from metricsEngine via the store.
- * No local calculations — single source of truth.
- */
 export default function DashboardPage() {
   const { bets, metrics, globals, loading } = useBetsStore();
 
@@ -26,7 +20,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Use metricsEngine values (fallback to defaults for empty state)
   const currentBankroll = metrics?.currentBankroll ?? globals.bancaInicial;
   const totalPL = metrics?.totalProfit ?? 0;
   const roi = metrics?.roi ?? 0;
@@ -39,7 +32,6 @@ export default function DashboardPage() {
   const allFinished = bets.filter((b) => b.result === 'W' || b.result === 'L');
   const recent = allFinished.slice(0, Math.max(upcoming.length, 1));
 
-  // Empty state
   const hasNoBets = bets.length === 0;
 
   return (
@@ -48,15 +40,15 @@ export default function DashboardPage() {
         <h1 className="page-title">Dashboard</h1>
       </div>
 
-      {/* KPIs — sourced from metricsEngine */}
+      {/* KPIs */}
       <section className="kpi-grid">
         <div className="kpi-card glass-panel">
           <div className="kpi-header">
-            <i className="fa-solid fa-wallet"></i> Bankroll Atual (USD)
+            <i className="fa-solid fa-wallet"></i> Current Bankroll
           </div>
           <div className="kpi-value">{fmt(currentBankroll)}</div>
           <div className="kpi-subtitle">
-            {totalBets > 0 ? `Após ${totalBets} apostas` : 'Banca Inicial'}
+            {totalBets > 0 ? `After ${totalBets} bets` : 'Starting Bankroll'}
           </div>
         </div>
 
@@ -68,19 +60,19 @@ export default function DashboardPage() {
             {roi.toFixed(2)}%
           </div>
           <div className="kpi-subtitle">
-            {totalBets > 0 ? `${wins}W — ${losses}L de ${totalBets}` : 'Sem dados'}
+            {totalBets > 0 ? `${wins}W — ${losses}L of ${totalBets}` : 'No data'}
           </div>
         </div>
 
         <div className="kpi-card glass-panel">
           <div className="kpi-header">
-            <i className="fa-solid fa-money-bill-trend-up"></i> Profit / Loss (USD)
+            <i className="fa-solid fa-money-bill-trend-up"></i> Profit / Loss
           </div>
           <div className={`kpi-value ${totalPL >= 0 ? 'text-gold' : 'text-red'}`}>
             {totalPL > 0 ? '+' : ''}
             {fmt(totalPL)}
           </div>
-          <div className="kpi-subtitle">Lucro Total</div>
+          <div className="kpi-subtitle">Total Profit</div>
         </div>
 
         <div className="kpi-card glass-panel">
@@ -88,7 +80,7 @@ export default function DashboardPage() {
             <i className="fa-solid fa-percent"></i> Win Rate
           </div>
           <div className="kpi-value">{winRate.toFixed(1)}%</div>
-          <div className="kpi-subtitle">Vitórias vs Derrotas</div>
+          <div className="kpi-subtitle">Wins vs Losses</div>
         </div>
       </section>
 
@@ -97,7 +89,7 @@ export default function DashboardPage() {
         <section className="glass-panel" style={{ padding: 40, textAlign: 'center' }}>
           <i className="fa-solid fa-chart-area" style={{ fontSize: 48, color: 'var(--text-muted)', marginBottom: 16 }}></i>
           <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-            Adicione apostas para ver o gráfico de evolução da banca.
+            Add bets to see your bankroll progression chart.
           </p>
         </section>
       ) : (
@@ -107,7 +99,7 @@ export default function DashboardPage() {
       {/* Global Controls */}
       <section className="global-controls glass-panel">
         <div className="control-group">
-          <span className="label">Banca Inicial</span>
+          <span className="label">Starting Bankroll</span>
           <span className="value">${globals.bancaInicial.toFixed(2)}</span>
         </div>
         <div className="control-group">
@@ -118,40 +110,23 @@ export default function DashboardPage() {
           <span className="label">Unit Size</span>
           <span className="value">{(globals.unitSize * 100).toFixed(1)}%</span>
         </div>
-        <div className="control-group highlight">
-          <span className="label">Dólar Hoje (R$)</span>
-          <span className="value">
-            {globals.dolarHoje > 0 ? `R$ ${globals.dolarHoje.toFixed(2)}` : 'R$ --'}
-          </span>
-        </div>
       </section>
 
-      {/* Bottom grid: recent bets + upcoming */}
+      {/* Bottom grid */}
       <div className="dashboard-bottom-grid">
         <section className="glass-panel">
           <div className="panel-header" style={{ padding: '20px 20px 0' }}>
-            <h2
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 16,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              Últimas Apostas
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Recent Bets
             </h2>
           </div>
           <div style={{ padding: '0 20px 20px' }}>
             {recent.length === 0 ? (
-              <p className="empty-state-msg">Sem apostas finalizadas.</p>
+              <p className="empty-state-msg">No settled bets yet.</p>
             ) : (
               recent.map((b, i) => (
                 <div className="recent-bet-row" key={i}>
-                  <span
-                    className={`result-badge ${
-                      b.result === 'W' ? 'badge-win' : 'badge-loss'
-                    }`}
-                  >
+                  <span className={`result-badge ${b.result === 'W' ? 'badge-win' : 'badge-loss'}`}>
                     {b.result === 'W' ? 'WIN' : 'LOSS'}
                   </span>
                   <span className="recent-bet-fight">{b.fight_name || '--'}</span>
@@ -167,20 +142,13 @@ export default function DashboardPage() {
 
         <section className="glass-panel">
           <div className="panel-header" style={{ padding: '20px 20px 0' }}>
-            <h2
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 16,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              Apostas em Andamento
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Upcoming Bets
             </h2>
           </div>
           <div style={{ padding: '0 20px 20px' }}>
             {upcoming.length === 0 ? (
-              <p className="empty-state-msg">Nenhuma aposta em andamento.</p>
+              <p className="empty-state-msg">No upcoming bets.</p>
             ) : (
               upcoming.map((b, i) => (
                 <div className="recent-bet-row" key={i}>

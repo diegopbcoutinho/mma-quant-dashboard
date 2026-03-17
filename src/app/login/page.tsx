@@ -41,7 +41,7 @@ export default function LoginPage() {
   if (loading) {
     return (
       <div className="auth-container">
-        <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Carregando...</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading...</div>
       </div>
     );
   }
@@ -56,7 +56,7 @@ export default function LoginPage() {
           </span>
         </div>
 
-        <h1 className="auth-title">Entrar</h1>
+        <h1 className="auth-title">Sign In</h1>
 
         {error && <div className="auth-error">{error}</div>}
 
@@ -69,14 +69,14 @@ export default function LoginPage() {
               className="auth-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
+              placeholder="you@email.com"
               required
               autoComplete="email"
             />
           </div>
 
           <div className="auth-field">
-            <label htmlFor="password">Senha</label>
+            <label htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
@@ -90,13 +90,13 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" className="auth-btn" disabled={submitting}>
-            {submitting ? 'Entrando...' : 'Entrar'}
+            {submitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <p className="auth-link">
-          Ainda não tem conta?{' '}
-          <Link href="/signup">Criar conta</Link>
+          Don&apos;t have an account?{' '}
+          <Link href="/signup">Create account</Link>
         </p>
       </div>
     </div>

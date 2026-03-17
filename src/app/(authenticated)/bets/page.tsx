@@ -11,12 +11,9 @@ import type { Bet } from '@/types';
 
 type Tab = 'finished' | 'future' | 'todo';
 
-/**
- * Export bets as CSV — Sprint 1.5 Data Safety
- * Downloads a CSV file with all bet data for the user.
- */
+/** Export bets as CSV */
 function exportBetsCSV(bets: Bet[]) {
-  const headers = ['Data', 'Evento', 'Luta', 'Fighter', 'Oponente', 'Odds', 'Stake USD', 'Stake BRL', 'Resultado', 'P/L USD'];
+  const headers = ['Date', 'Event', 'Fight', 'Fighter', 'Opponent', 'Odds', 'Stake', 'Result', 'P/L'];
   const rows = bets.map((b) => [
     b.date,
     b.event_name,
@@ -25,13 +22,12 @@ function exportBetsCSV(bets: Bet[]) {
     b.opponent,
     b.odds.toFixed(3),
     b.stake_usd.toFixed(2),
-    b.stake_brl.toFixed(2),
-    b.result === 'W' ? 'Win' : b.result === 'L' ? 'Loss' : b.result === '-' ? 'Pendente' : 'A Fazer',
+    b.result === 'W' ? 'Win' : b.result === 'L' ? 'Loss' : b.result === '-' ? 'Pending' : 'To Do',
     b.pl_usd.toFixed(2),
   ]);
 
   const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
@@ -84,9 +80,9 @@ export default function BetsPage() {
 
   const isFinishedTab = currentTab === 'finished';
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'finished', label: 'Últimas Apostas' },
-    { id: 'future', label: 'Apostas Futuras' },
-    { id: 'todo', label: 'Apostas a Fazer' },
+    { id: 'finished', label: 'Recent Bets' },
+    { id: 'future', label: 'Upcoming Bets' },
+    { id: 'todo', label: 'To Do' },
   ];
 
   const handleDeleteConfirm = useCallback(() => {
@@ -99,20 +95,20 @@ export default function BetsPage() {
   return (
     <main className="page-content">
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 className="page-title">Apostas</h1>
+        <h1 className="page-title">Bets</h1>
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             className="btn-sync"
             onClick={() => exportBetsCSV(bets)}
-            title="Exportar CSV"
+            title="Export CSV"
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <i className="fa-solid fa-file-csv"></i>
-            Exportar
+            Export
           </button>
           <button className="btn-save" onClick={() => setShowModal(true)}>
             <i className="fa-solid fa-plus" style={{ marginRight: 6 }}></i>
-            Nova Aposta
+            New Bet
           </button>
         </div>
       </div>
@@ -133,7 +129,7 @@ export default function BetsPage() {
           <div className="table-filters">
             <input
               type="text"
-              placeholder="Buscar lutador ou evento..."
+              placeholder="Search fighter or event..."
               className="search-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -146,13 +142,13 @@ export default function BetsPage() {
           <div className="future-summary-bar">
             <div className="future-summary-item">
               <span className="future-summary-label">
-                <i className="fa-solid fa-coins"></i> Total Apostado
+                <i className="fa-solid fa-coins"></i> Total Staked
               </span>
               <span className="future-summary-value">{fmt(futureTotal.totalStake)}</span>
             </div>
             <div className="future-summary-item">
               <span className="future-summary-label">
-                <i className="fa-solid fa-arrow-trend-up"></i> Lucro Potencial
+                <i className="fa-solid fa-arrow-trend-up"></i> Potential Profit
               </span>
               <span className="future-summary-value text-gold">
                 +{fmt(futureTotal.totalProfit)}
@@ -160,7 +156,7 @@ export default function BetsPage() {
             </div>
             <div className="future-summary-item">
               <span className="future-summary-label">
-                <i className="fa-solid fa-list-check"></i> Apostas
+                <i className="fa-solid fa-list-check"></i> Bets
               </span>
               <span className="future-summary-value">{futureTotal.count}</span>
             </div>
@@ -170,15 +166,14 @@ export default function BetsPage() {
         {loading ? (
           <TableSkeleton />
         ) : bets.length === 0 ? (
-          /* Empty state */
           <div style={{ padding: '60px 20px', textAlign: 'center' }}>
             <i className="fa-solid fa-receipt" style={{ fontSize: 48, color: 'var(--text-muted)', marginBottom: 16 }}></i>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>
-              Nenhuma aposta registrada ainda.
+              No bets recorded yet.
             </p>
             <button className="btn-save" onClick={() => setShowModal(true)}>
               <i className="fa-solid fa-plus" style={{ marginRight: 6 }}></i>
-              Criar Primeira Aposta
+              Create First Bet
             </button>
           </div>
         ) : (
@@ -186,30 +181,29 @@ export default function BetsPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Data</th>
-                  <th>Evento</th>
-                  <th>Luta</th>
+                  <th>Date</th>
+                  <th>Event</th>
+                  <th>Fight</th>
                   <th>Odds</th>
-                  <th>Risk (USD)</th>
-                  <th>Risk (BRL)</th>
-                  <th>Resultado</th>
+                  <th>Stake</th>
+                  <th>Result</th>
                   {isFinishedTab && (
                     <>
-                      <th>P/L (USD)</th>
+                      <th>P/L</th>
                       <th>Bankroll</th>
                     </>
                   )}
-                  <th style={{ width: 80, textAlign: 'center' }}>Ações</th>
+                  <th style={{ width: 80, textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={isFinishedTab ? 10 : 8}
+                      colSpan={isFinishedTab ? 9 : 7}
                       style={{ textAlign: 'center', color: 'var(--text-muted)' }}
                     >
-                      Nenhuma aposta encontrada para esta aba.
+                      No bets found for this tab.
                     </td>
                   </tr>
                 ) : (
@@ -242,7 +236,6 @@ export default function BetsPage() {
                         <td className="fighter-name">{b.fight_name || '--'}</td>
                         <td>{b.odds > 0 ? b.odds.toFixed(3) : '--'}</td>
                         <td>{fmt(b.stake_usd)}</td>
-                        <td>R$ {b.stake_brl.toFixed(2)}</td>
                         <td style={{ position: 'relative' }}>
                           <ResultBadge
                             bet={b}
@@ -266,7 +259,7 @@ export default function BetsPage() {
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                             <button
                               onClick={() => setEditingBet(b)}
-                              title="Editar"
+                              title="Edit"
                               style={{
                                 background: 'transparent', border: '1px solid var(--border-color)',
                                 color: 'var(--text-muted)', width: 30, height: 30, borderRadius: 6,
@@ -280,7 +273,7 @@ export default function BetsPage() {
                             </button>
                             <button
                               onClick={() => setDeleteTarget(b)}
-                              title="Excluir"
+                              title="Delete"
                               style={{
                                 background: 'transparent', border: '1px solid var(--border-color)',
                                 color: 'var(--text-muted)', width: 30, height: 30, borderRadius: 6,
@@ -307,12 +300,11 @@ export default function BetsPage() {
       {showModal && <BetModal onClose={() => setShowModal(false)} />}
       {editingBet && <BetModal editBet={editingBet} onClose={() => setEditingBet(null)} />}
 
-      {/* Delete confirmation modal — Sprint 1.5 Data Safety */}
       {deleteTarget && (
         <ConfirmModal
-          title="Excluir Aposta"
-          message={`Tem certeza que deseja excluir a aposta "${deleteTarget.fight_name}"? Esta ação não pode ser desfeita.`}
-          confirmLabel="Excluir"
+          title="Delete Bet"
+          message={`Are you sure you want to delete the bet "${deleteTarget.fight_name}"? This action cannot be undone.`}
+          confirmLabel="Delete"
           danger
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
@@ -322,7 +314,7 @@ export default function BetsPage() {
   );
 }
 
-/** Clickable result badge — dropdown rendered via portal to escape table overflow */
+/** Clickable result badge — dropdown via portal */
 function ResultBadge({
   bet,
   isEditing,
@@ -360,10 +352,10 @@ function ResultBadge({
   }, [isEditing, onToggle]);
 
   let badgeClass = 'badge-pending';
-  let badgeText = 'PENDENTE';
+  let badgeText = 'PENDING';
   if (bet.result === 'W') { badgeClass = 'badge-win'; badgeText = 'WIN'; }
   else if (bet.result === 'L') { badgeClass = 'badge-loss'; badgeText = 'LOSS'; }
-  else if (bet.result === '') { badgeText = 'A FAZER'; }
+  else if (bet.result === '') { badgeText = 'TO DO'; }
 
   const btnStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 8,
@@ -415,7 +407,7 @@ function ResultBadge({
             onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
-            <i className="fa-solid fa-clock"></i> PENDENTE
+            <i className="fa-solid fa-clock"></i> PENDING
           </button>
         </div>,
         document.body
@@ -429,7 +421,7 @@ function ResultBadge({
         className={`result-badge ${badgeClass}`}
         style={{ cursor: 'pointer', userSelect: 'none' }}
         onClick={onToggle}
-        title="Clique para alterar resultado"
+        title="Click to change result"
       >
         {badgeText} <i className="fa-solid fa-caret-down" style={{ fontSize: 10, marginLeft: 3, opacity: 0.6 }}></i>
       </span>

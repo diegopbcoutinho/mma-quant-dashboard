@@ -7,12 +7,12 @@ import type { Bet } from '@/types';
 
 interface BetModalProps {
   onClose: () => void;
-  editBet?: Bet | null; // If provided, modal is in edit mode
+  editBet?: Bet | null;
 }
 
 export default function BetModal({ onClose, editBet }: BetModalProps) {
   const { user } = useAuthStore();
-  const { addBet, editBet: updateBet, globals } = useBetsStore();
+  const { addBet, editBet: updateBet } = useBetsStore();
   const isEdit = !!editBet;
 
   const [eventName, setEventName] = useState('');
@@ -24,7 +24,6 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
   const [result, setResult] = useState<'' | 'W' | 'L' | '-'>('-');
   const [submitting, setSubmitting] = useState(false);
 
-  // Pre-fill fields when editing
   useEffect(() => {
     if (editBet) {
       setEventName(editBet.event_name || '');
@@ -45,7 +44,6 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
 
     const oddsNum = parseFloat(odds);
     const stakeNum = parseFloat(stakeUsd);
-    const stakeBrl = stakeNum * (globals.dolarHoje || 1);
 
     let plUsd = 0;
     if (result === 'W') plUsd = stakeNum * (oddsNum - 1);
@@ -59,12 +57,12 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
         opponent,
         odds: oddsNum,
         stake_usd: stakeNum,
-        stake_brl: stakeBrl,
+        stake_brl: 0,
         result,
         pl_usd: plUsd,
       });
     } else {
-      const today = new Date().toLocaleDateString('pt-BR');
+      const today = new Date().toLocaleDateString('en-US');
       await addBet(user.id, {
         date: today,
         event_name: eventName,
@@ -73,7 +71,7 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
         opponent,
         odds: oddsNum,
         stake_usd: stakeNum,
-        stake_brl: stakeBrl,
+        stake_brl: 0,
         result,
         pl_usd: plUsd,
         bankroll_before: 0,
@@ -90,7 +88,7 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">
-          <span>{isEdit ? 'Editar Aposta' : 'Nova Aposta'}</span>
+          <span>{isEdit ? 'Edit Bet' : 'New Bet'}</span>
           <button className="modal-close" onClick={onClose}>
             <i className="fa-solid fa-xmark"></i>
           </button>
@@ -98,23 +96,23 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
 
         <form onSubmit={handleSubmit}>
           <div className="modal-field">
-            <label>Evento</label>
+            <label>Event</label>
             <input
               className="auth-input"
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
-              placeholder="Ex: UFC 310"
+              placeholder="e.g. UFC 310"
               required
             />
           </div>
 
           <div className="modal-field">
-            <label>Luta</label>
+            <label>Fight</label>
             <input
               className="auth-input"
               value={fightName}
               onChange={(e) => setFightName(e.target.value)}
-              placeholder="Ex: Fighter A vs Fighter B"
+              placeholder="e.g. Fighter A vs Fighter B"
               required
             />
           </div>
@@ -126,16 +124,16 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
                 className="auth-input"
                 value={fighter}
                 onChange={(e) => setFighter(e.target.value)}
-                placeholder="Lutador apostado"
+                placeholder="Fighter picked"
               />
             </div>
             <div className="modal-field">
-              <label>Oponente</label>
+              <label>Opponent</label>
               <input
                 className="auth-input"
                 value={opponent}
                 onChange={(e) => setOpponent(e.target.value)}
-                placeholder="Adversário"
+                placeholder="Opponent"
               />
             </div>
           </div>
@@ -168,25 +166,25 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
           </div>
 
           <div className="modal-field">
-            <label>Resultado</label>
+            <label>Result</label>
             <select
               className="auth-input"
               value={result}
               onChange={(e) => setResult(e.target.value as '' | 'W' | 'L' | '-')}
             >
-              <option value="-">Pendente</option>
+              <option value="-">Pending</option>
               <option value="W">Win</option>
               <option value="L">Loss</option>
-              <option value="">A Fazer</option>
+              <option value="">To Do</option>
             </select>
           </div>
 
           <div className="modal-actions">
             <button type="button" className="btn-sync" onClick={onClose}>
-              Cancelar
+              Cancel
             </button>
             <button type="submit" className="btn-save" disabled={submitting}>
-              {submitting ? 'Salvando...' : isEdit ? 'Salvar Alterações' : 'Salvar Aposta'}
+              {submitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Save Bet'}
             </button>
           </div>
         </form>

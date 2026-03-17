@@ -14,9 +14,9 @@ interface SidebarProps {
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'fa-house', href: '/dashboard' },
   { id: 'analytics', label: 'Analytics', icon: 'fa-chart-column', href: '/analytics' },
-  { id: 'bets', label: 'Apostas', icon: 'fa-list-check', href: '/bets' },
-  { id: 'simulator', label: 'Simulador', icon: 'fa-chart-line', href: '/simulator' },
-  { id: 'settings', label: 'Configurações', icon: 'fa-gear', href: '/settings' },
+  { id: 'bets', label: 'Bets', icon: 'fa-list-check', href: '/bets' },
+  { id: 'simulator', label: 'Simulator', icon: 'fa-chart-line', href: '/simulator' },
+  { id: 'settings', label: 'Settings', icon: 'fa-gear', href: '/settings' },
 ];
 
 export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile }: SidebarProps) {
@@ -43,7 +43,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
               MMA <strong>QUANT</strong>
             </span>
           </div>
-          <button className="sidebar-toggle-btn" onClick={onToggle} title="Recolher sidebar">
+          <button className="sidebar-toggle-btn" onClick={onToggle} title="Collapse sidebar">
             <i className="fa-solid fa-chevron-left"></i>
           </button>
         </div>
@@ -73,7 +73,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
             <div className="sidebar-user-info">
               <div className="sidebar-user-email">{user.email}</div>
             </div>
-            <button className="btn-logout" onClick={signOut} title="Sair">
+            <button className="btn-logout" onClick={signOut} title="Sign out">
               <i className="fa-solid fa-right-from-bracket"></i>
             </button>
           </div>

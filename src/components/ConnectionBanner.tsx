@@ -35,7 +35,7 @@ export default function ConnectionBanner() {
       }}
     >
       <i className="fa-solid fa-wifi" style={{ opacity: 0.7 }}></i>
-      <span>Problema de conexão. A sincronização pode estar atrasada.</span>
+      <span>Connection issue. Data sync may be delayed.</span>
       <button
         onClick={clearConnectionError}
         style={{

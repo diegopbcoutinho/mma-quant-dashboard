@@ -3,13 +3,13 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'MMA Quant Strategy Tracker',
-  description: 'Rastreamento quantitativo de apostas em MMA',
+  description: 'Quantitative MMA betting analytics and bankroll tracking',
   icons: { icon: '/favicon.svg' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -31,12 +31,12 @@ export default function SignupPage() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem.');
+      setError('Passwords do not match.');
       return;
     }
 
     if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
+      setError('Password must be at least 6 characters.');
       return;
     }
 
@@ -55,7 +55,7 @@ export default function SignupPage() {
   if (loading) {
     return (
       <div className="auth-container">
-        <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Carregando...</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading...</div>
       </div>
     );
   }
@@ -70,20 +70,20 @@ export default function SignupPage() {
           </span>
         </div>
 
-        <h1 className="auth-title">Criar Conta</h1>
+        <h1 className="auth-title">Create Account</h1>
 
         {error && <div className="auth-error">{error}</div>}
 
         {success ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: 'var(--accent-gold)', marginBottom: 12 }}>
-              Conta criada com sucesso!
+              Account created successfully!
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-              Verifique seu email para confirmar a conta, depois faça login.
+              Check your email to confirm your account, then sign in.
             </p>
             <p className="auth-link" style={{ marginTop: 24 }}>
-              <Link href="/login">Ir para o login</Link>
+              <Link href="/login">Go to sign in</Link>
             </p>
           </div>
         ) : (
@@ -96,50 +96,50 @@ export default function SignupPage() {
                 className="auth-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                placeholder="you@email.com"
                 required
                 autoComplete="email"
               />
             </div>
 
             <div className="auth-field">
-              <label htmlFor="password">Senha</label>
+              <label htmlFor="password">Password</label>
               <input
                 id="password"
                 type="password"
                 className="auth-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Min 6 characters"
                 required
                 autoComplete="new-password"
               />
             </div>
 
             <div className="auth-field">
-              <label htmlFor="confirmPassword">Confirmar Senha</label>
+              <label htmlFor="confirmPassword">Confirm Password</label>
               <input
                 id="confirmPassword"
                 type="password"
                 className="auth-input"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repita a senha"
+                placeholder="Repeat password"
                 required
                 autoComplete="new-password"
               />
             </div>
 
             <button type="submit" className="auth-btn" disabled={submitting}>
-              {submitting ? 'Criando...' : 'Criar Conta'}
+              {submitting ? 'Creating...' : 'Create Account'}
             </button>
           </form>
         )}
 
         {!success && (
           <p className="auth-link">
-            Já tem conta?{' '}
-            <Link href="/login">Entrar</Link>
+            Already have an account?{' '}
+            <Link href="/login">Sign in</Link>
           </p>
         )}
       </div>

@@ -12,7 +12,6 @@ export default function AnalyticsPage() {
   const [showAll, setShowAll] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Fade in effect
   useEffect(() => {
     if (analytics && panelRef.current) {
       requestAnimationFrame(() => {
@@ -41,7 +40,7 @@ export default function AnalyticsPage() {
         <div className="page-header">
           <h1 className="page-title">Analytics</h1>
         </div>
-        <p className="empty-state-msg">Sem dados suficientes para análise.</p>
+        <p className="empty-state-msg">Not enough data for analysis.</p>
       </main>
     );
   }
@@ -53,34 +52,34 @@ export default function AnalyticsPage() {
     {
       icon: 'fa-solid fa-trophy',
       color: 'var(--accent-gold)',
-      label: 'Maior Série Win',
+      label: 'Best Win Streak',
       value: String(streaks.longestWin),
-      unit: 'seguidas',
+      unit: 'consecutive',
       gold: true,
     },
     {
       icon: 'fa-solid fa-skull',
       color: 'var(--accent-red)',
-      label: 'Maior Série Loss',
+      label: 'Worst Loss Streak',
       value: String(streaks.longestLoss),
-      unit: 'seguidas',
+      unit: 'consecutive',
       gold: false,
     },
     {
       icon: 'fa-solid fa-arrow-trend-down',
       color: 'var(--accent-red)',
-      label: 'Drawdown Máximo',
+      label: 'Max Drawdown',
       value: `${drawdown.maxDDPct.toFixed(1)}%`,
-      unit: `$${drawdown.maxDD.toFixed(2)} a partir de $${drawdown.peak.toFixed(2)}`,
+      unit: `$${drawdown.maxDD.toFixed(2)} from peak $${drawdown.peak.toFixed(2)}`,
       gold: false,
     },
     {
       icon: 'fa-solid fa-bullseye',
       color: 'var(--accent-gold)',
-      label: 'Melhor Faixa de Odds',
+      label: 'Best Odds Range',
       value: bestRange ? bestRange.label : '--',
       unit: bestRange
-        ? `ROI ${bestRange.roi.toFixed(1)}% · ${bestRange.count} apostas`
+        ? `ROI ${bestRange.roi.toFixed(1)}% · ${bestRange.count} bets`
         : '',
       gold: true,
     },
@@ -120,7 +119,7 @@ export default function AnalyticsPage() {
         <div className="analytics-grid">
           <div className="analytics-block">
             <div className="analytics-block-title">
-              <i className="fa-solid fa-chart-bar"></i> ROI por Faixa de Odds
+              <i className="fa-solid fa-chart-bar"></i> ROI by Odds Range
             </div>
             <RoiChart roiByOdds={roiByOdds} />
           </div>
@@ -128,7 +127,7 @@ export default function AnalyticsPage() {
           <div className="analytics-block">
             <div className="analytics-block-header">
               <div className="analytics-block-title">
-                <i className="fa-solid fa-ranking-star"></i> Análise por Grupo
+                <i className="fa-solid fa-ranking-star"></i> Group Analysis
               </div>
               <div className="analytics-mini-tabs">
                 <button
@@ -138,7 +137,7 @@ export default function AnalyticsPage() {
                     setShowAll(false);
                   }}
                 >
-                  Por Evento
+                  By Event
                 </button>
                 <button
                   className={`analytics-mini-tab ${profitTab === 'fighter' ? 'active' : ''}`}
@@ -147,7 +146,7 @@ export default function AnalyticsPage() {
                     setShowAll(false);
                   }}
                 >
-                  Por Lutador
+                  By Fighter
                   <span className="tooltip-wrapper">
                     <i
                       className="fa-solid fa-circle-info"
@@ -158,7 +157,7 @@ export default function AnalyticsPage() {
                       }}
                     ></i>
                     <span className="tooltip-text" style={{ fontSize: 11 }}>
-                      Rentabilidade histórica apostando em cada lutador.
+                      Historical profitability betting on each fighter.
                     </span>
                   </span>
                 </button>
@@ -169,8 +168,8 @@ export default function AnalyticsPage() {
               <table className="analytics-inner-table">
                 <thead>
                   <tr>
-                    <th>{profitTab === 'event' ? 'Evento' : 'Lutador'}</th>
-                    <th>Apostas</th>
+                    <th>{profitTab === 'event' ? 'Event' : 'Fighter'}</th>
+                    <th>Bets</th>
                     <th>Win%</th>
                     <th>Profit</th>
                   </tr>
@@ -239,8 +238,8 @@ export default function AnalyticsPage() {
                 onClick={() => setShowAll((prev) => !prev)}
               >
                 {showAll
-                  ? '↑ Ver menos'
-                  : `↓ Ver todos (${tableData.length})`}
+                  ? '↑ Show less'
+                  : `↓ Show all (${tableData.length})`}
               </button>
             )}
           </div>
