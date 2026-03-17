@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { BRAND } from '@/config/brand';
 
@@ -51,7 +52,7 @@ export default function LoginPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-logo">
-          <i className="fa-solid fa-hand-fist"></i>
+          <Image src="/logo.png" alt={BRAND.name} width={48} height={48} />
           <span className="auth-logo-text">
             <strong>{BRAND.name}</strong>
           </span>

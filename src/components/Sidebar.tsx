@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { BRAND } from '@/config/brand';
 
@@ -39,7 +40,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-top">
           <div className="sidebar-logo">
-            <i className="fa-solid fa-hand-fist"></i>
+            <Image src="/logo.png" alt={BRAND.name} width={28} height={28} className="sidebar-logo-img" />
             <span className="sidebar-logo-text">
               <strong>{BRAND.name}</strong>
             </span>

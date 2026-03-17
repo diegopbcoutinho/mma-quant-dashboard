@@ -72,6 +72,11 @@ body {
 .app-layout.sidebar-collapsed .sidebar { width: 64px; }
 .app-layout.sidebar-collapsed .main-wrapper { margin-left: 64px; }
 .app-layout.sidebar-collapsed .sidebar-logo-text { opacity: 0; width: 0; }
+
+.sidebar-logo-img {
+    flex-shrink: 0;
+    object-fit: contain;
+}
 .app-layout.sidebar-collapsed .nav-label { opacity: 0; width: 0; overflow: hidden; }
 .app-layout.sidebar-collapsed .sidebar-toggle-btn i { transform: rotate(180deg); }
 .app-layout.sidebar-collapsed .sidebar-version { opacity: 0; }
