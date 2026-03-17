@@ -5,8 +5,9 @@
 
 // Estado global
 let appState = {
-    globals: { bancaInicial: 0, targetUnits: 0, unitSize: 0, dolarHoje: 0 },
-    bets: [],
+    globals:   { bancaInicial: 0, targetUnits: 0, unitSize: 0, dolarHoje: 0 },
+    bets:      [],
+    analytics: null,
     chartInstance: null,
     currentTab: 'finished'
 };
@@ -192,6 +193,10 @@ function updateUI() {
 
     renderTable();
     renderChart();
+
+    // Analytics — compute once, render once
+    appState.analytics = computeAnalytics(appState.bets);
+    renderAnalytics(appState.analytics);
 }
 
 // ─── TABELA ───────────────────────────────────────────────────────────────────

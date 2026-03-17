@@ -96,6 +96,41 @@
                 </div>
             </section>
 
+            <!-- Performance Analytics -->
+            <section class="analytics-section glass-panel" id="analyticsPanel" style="opacity:0">
+                <div class="panel-header">
+                    <h2 class="analytics-title">
+                        <i class="fa-solid fa-chart-column" style="color:var(--accent-gold);font-size:18px"></i>
+                        Performance Analytics
+                        <span class="tooltip-wrapper">
+                            <i class="fa-solid fa-circle-info analytics-info-icon"></i>
+                            <span class="tooltip-text">Breakdown estatístico da sua performance histórica.</span>
+                        </span>
+                    </h2>
+                </div>
+
+                <!-- Block 1: Insight Cards -->
+                <div class="analytics-insights-row" id="analyticsInsights"></div>
+
+                <!-- Block 2 + 3: Chart + Table -->
+                <div class="analytics-grid">
+                    <div class="analytics-block">
+                        <div class="analytics-block-title">
+                            <i class="fa-solid fa-chart-bar"></i> ROI por Faixa de Odds
+                        </div>
+                        <div class="analytics-chart-wrap">
+                            <canvas id="roiByOddsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="analytics-block">
+                        <div class="analytics-block-title">
+                            <i class="fa-solid fa-ranking-star"></i> Lucro por Evento
+                        </div>
+                        <div id="profitByEventWrap"></div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Tabela de Lutas -->
             <section class="fights-section glass-panel">
                 <div class="panel-header">
@@ -152,6 +187,7 @@
 
     <!-- Scripts (Chart.js para gráficos) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="performanceAnalytics.js"></script>
     <script src="app.js"></script>
 </body>
 

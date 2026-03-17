@@ -388,6 +388,240 @@ tr:hover td {
     color: var(--text-primary);
 }
 
+/* ─── Performance Analytics ────────────────────────────────────────────────── */
+
+.analytics-section {
+    padding: 24px;
+}
+
+.analytics-title {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Tooltip */
+.tooltip-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.analytics-info-icon {
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: help;
+}
+
+.tooltip-text {
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(10,10,12,0.98);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    font-weight: 400;
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 100;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+    opacity: 1;
+}
+
+/* Insight Cards */
+.analytics-insights-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.analytics-insight-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 18px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: var(--transition);
+}
+
+.analytics-insight-card:hover {
+    background: rgba(255, 255, 255, 0.055);
+    transform: translateY(-2px);
+}
+
+.aic-icon {
+    font-size: 20px;
+    padding-top: 3px;
+    min-width: 22px;
+    text-align: center;
+}
+
+.aic-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.aic-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.aic-value {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.text-red-soft {
+    color: var(--accent-red);
+}
+
+.aic-unit {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Analytics grid: chart left, table right */
+.analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.analytics-block {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+
+.analytics-block-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.analytics-chart-wrap {
+    height: 190px;
+    position: relative;
+}
+
+.analytics-table-scroll {
+    overflow-x: auto;
+}
+
+.analytics-inner-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.analytics-inner-table th {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 8px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 500;
+}
+
+.analytics-inner-table td {
+    font-size: 13px;
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.analytics-inner-table tr:last-child td {
+    border-bottom: none;
+}
+
+.analytics-inner-table tr:hover td {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+td.evt-name {
+    font-size: 12px;
+    color: var(--text-muted);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.view-all-btn {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px 0;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.view-all-btn:hover {
+    color: var(--accent-gold);
+    border-color: rgba(212, 175, 55, 0.4);
+}
+
+@media (max-width: 900px) {
+    .analytics-insights-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .analytics-insights-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .aic-value {
+        font-size: 22px;
+    }
+}
+
 .loading-cell {
     text-align: center;
     padding: 40px !important;
