@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { id: 'bets', label: 'Bets', icon: 'fa-list-check', href: '/bets' },
   { id: 'simulator', label: 'Simulator', icon: 'fa-chart-line', href: '/simulator' },
   { id: 'settings', label: 'Settings', icon: 'fa-gear', href: '/settings' },
+  { id: 'results', label: 'Results', icon: 'fa-clipboard-check', href: '/admin/results' },
 ];
 
 export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile }: SidebarProps) {
