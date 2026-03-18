@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useBetsStore } from '@/stores/useBetsStore';
 import RoiChart from '@/components/RoiChart';
+import FightEdgeScore from '@/components/FightEdgeScore';
 import { KPISkeleton } from '@/components/LoadingSkeleton';
 import type { EventProfit, FighterStat } from '@/types';
 
@@ -114,6 +115,9 @@ export default function AnalyticsPage() {
             </div>
           ))}
         </div>
+
+        {/* FightEdge Score */}
+        <FightEdgeScore />
 
         {/* Chart + Table grid */}
         <div className="analytics-grid">

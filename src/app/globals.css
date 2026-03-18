@@ -1899,3 +1899,174 @@ td.evt-name {
     .sim-actions { flex-direction: column; align-items: stretch; }
     .sim-run-btn { justify-content: center; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FIGHTEDGE SCORE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.analytics-score-section {
+    padding: 28px 32px;
+    margin-bottom: 20px;
+}
+
+.bet-score-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 0;
+}
+
+.bet-score-empty p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0;
+}
+
+.score-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 36px;
+    align-items: start;
+}
+
+.score-gauge-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.bet-score-gauge {
+    position: relative;
+    width: 160px;
+    height: 160px;
+}
+
+.score-ring {
+    width: 100%;
+    height: 100%;
+}
+
+.score-ring-fill {
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.score-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.score-number {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.score-label {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+}
+
+.score-details-col {
+    min-width: 0;
+}
+
+.score-section-title {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+}
+
+.score-factors {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.score-factor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3px;
+}
+
+.score-factor-label {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.score-factor-value {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.score-factor-bar-bg {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.score-factor-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.score-factor-weight {
+    font-size: 10px;
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin-top: 1px;
+}
+
+.score-tips {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.score-tip {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: rgba(212, 175, 55, 0.04);
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.score-tip i {
+    color: var(--accent-gold);
+    font-size: 13px;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+    .score-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .score-gauge-col {
+        align-items: center;
+    }
+}
