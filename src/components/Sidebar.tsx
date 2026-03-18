@@ -13,12 +13,18 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+/** Admin emails — only these users see admin navigation items */
+const ADMIN_EMAILS = ['diegopbcoutinho@gmail.com'];
+
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'fa-house', href: '/dashboard' },
   { id: 'analytics', label: 'Analytics', icon: 'fa-chart-column', href: '/analytics' },
   { id: 'bets', label: 'Bets', icon: 'fa-list-check', href: '/bets' },
   { id: 'simulator', label: 'Simulator', icon: 'fa-chart-line', href: '/simulator' },
   { id: 'settings', label: 'Settings', icon: 'fa-gear', href: '/settings' },
+];
+
+const ADMIN_NAV_ITEMS = [
   { id: 'results', label: 'Results', icon: 'fa-clipboard-check', href: '/admin/results' },
 ];
 
@@ -67,6 +73,28 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
               </Link>
             );
           })}
+
+          {/* Admin-only navigation */}
+          {user && ADMIN_EMAILS.includes(user.email || '') && (
+            <>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 12px' }} />
+              {ADMIN_NAV_ITEMS.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={`nav-item ${isActive ? 'active' : ''}`}
+                    data-tooltip={item.label}
+                    onClick={onCloseMobile}
+                  >
+                    <i className={`fa-solid ${item.icon} nav-icon`}></i>
+                    <span className="nav-label">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* User info */}

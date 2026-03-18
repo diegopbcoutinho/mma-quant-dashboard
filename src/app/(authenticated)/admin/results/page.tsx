@@ -1,13 +1,29 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { upsertFightResult, getFightResults } from '@/services/gradingEngine';
 import Toast from '@/components/Toast';
 import type { FightResult } from '@/types/fightResult';
 
 const METHODS = ['Decision', 'KO', 'TKO', 'Submission', 'DQ', 'Other'];
+const ADMIN_EMAILS = ['diegopbcoutinho@gmail.com'];
 
 export default function AdminResultsPage() {
+  const { user } = useAuthStore();
+  const router = useRouter();
+
+  // Block non-admin users
+  useEffect(() => {
+    if (user && !ADMIN_EMAILS.includes(user.email || '')) {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
+
+  if (!user || !ADMIN_EMAILS.includes(user.email || '')) {
+    return null;
+  }
   // Form state
   const [eventName, setEventName] = useState('');
   const [fightId, setFightId] = useState('');
