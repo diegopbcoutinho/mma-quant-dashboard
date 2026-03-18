@@ -3,10 +3,12 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useBetsStore } from '@/stores/useBetsStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { fmt } from '@/lib/helpers';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BetModal from '@/components/NewBetModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import Toast from '@/components/Toast';
 import type { Bet } from '@/types';
 
 type Tab = 'finished' | 'future' | 'todo';
@@ -38,12 +40,36 @@ function exportBetsCSV(bets: Bet[]) {
 }
 
 export default function BetsPage() {
-  const { bets, loading, currentTab, setCurrentTab, updateBetResult, removeBet } = useBetsStore();
+  const { bets, loading, currentTab, setCurrentTab, updateBetResult, removeBet, gradePendingBets } = useBetsStore();
+  const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingBet, setEditingBet] = useState<Bet | null>(null);
   const [editingBetId, setEditingBetId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bet | null>(null);
+  const [grading, setGrading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  const handleGradeResults = useCallback(async () => {
+    if (!user || grading) return;
+    setGrading(true);
+    try {
+      const summary = await gradePendingBets(user.id);
+      if (summary.totalGraded > 0) {
+        setToast({
+          message: `${summary.totalGraded} bet${summary.totalGraded > 1 ? 's' : ''} graded automatically.`,
+          type: 'success',
+        });
+      } else if (summary.totalChecked > 0) {
+        setToast({ message: 'No completed fights found for your pending bets.', type: 'info' });
+      } else {
+        setToast({ message: 'No pending bets to check.', type: 'info' });
+      }
+    } catch {
+      setToast({ message: 'Failed to check results. Try again.', type: 'error' });
+    }
+    setGrading(false);
+  }, [user, grading, gradePendingBets]);
 
   const tabFiltered = useMemo(() => {
     return bets.filter((b) => {
@@ -97,6 +123,16 @@ export default function BetsPage() {
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 className="page-title">Bets</h1>
         <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            className="btn-sync"
+            onClick={handleGradeResults}
+            disabled={grading}
+            title="Auto-grade pending bets using fight results"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <i className={`fa-solid fa-rotate ${grading ? 'fa-spin' : ''}`}></i>
+            {grading ? 'Checking...' : 'Check Results'}
+          </button>
           <button
             className="btn-sync"
             onClick={() => exportBetsCSV(bets)}
@@ -300,6 +336,14 @@ export default function BetsPage() {
       {showModal && <BetModal onClose={() => setShowModal(false)} />}
       {editingBet && <BetModal editBet={editingBet} onClose={() => setEditingBet(null)} />}
 
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {deleteTarget && (
         <ConfirmModal
           title="Delete Bet"
@@ -350,6 +394,10 @@ function ResultBadge({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [isEditing, onToggle]);
+
+  // Access graded_at from the full bet object if available
+  const fullBet = bet as Bet;
+  const isAutoGraded = !!fullBet.graded_at;
 
   let badgeClass = 'badge-pending';
   let badgeText = 'PENDING';
@@ -421,9 +469,11 @@ function ResultBadge({
         className={`result-badge ${badgeClass}`}
         style={{ cursor: 'pointer', userSelect: 'none' }}
         onClick={onToggle}
-        title="Click to change result"
+        title={isAutoGraded ? 'Auto graded by FightEdge — Click to change' : 'Click to change result'}
       >
-        {badgeText} <i className="fa-solid fa-caret-down" style={{ fontSize: 10, marginLeft: 3, opacity: 0.6 }}></i>
+        {badgeText}
+        {isAutoGraded && <i className="fa-solid fa-robot" style={{ fontSize: 9, marginLeft: 4, opacity: 0.5 }} title="Auto graded by FightEdge"></i>}
+        {' '}<i className="fa-solid fa-caret-down" style={{ fontSize: 10, marginLeft: 2, opacity: 0.6 }}></i>
       </span>
       {dropdown}
     </>

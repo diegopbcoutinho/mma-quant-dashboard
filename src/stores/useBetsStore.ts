@@ -11,9 +11,11 @@
 
 import { create } from 'zustand';
 import type { Bet, Globals, Analytics, Settings } from '@/types';
+import type { GradingSummary } from '@/types/fightResult';
 import { computeAnalytics } from '@/lib/analytics';
 import { calculateMetrics, type Metrics } from '@/services/metricsEngine';
 import * as dataService from '@/services/dataService';
+import { checkAndGradePendingBets } from '@/services/gradingEngine';
 
 interface BetsState {
   // Data
@@ -39,6 +41,7 @@ interface BetsState {
   editBet: (betId: string, updates: Partial<Bet>) => Promise<void>;
   removeBet: (betId: string) => Promise<void>;
   updateBetResult: (betId: string, result: 'W' | 'L' | '-' | '', stakeUsd: number, odds: number) => Promise<void>;
+  gradePendingBets: (userId: string) => Promise<GradingSummary>;
   fetchSettings: (userId: string) => Promise<void>;
   saveSettings: (userId: string, settings: Partial<Settings>) => Promise<void>;
   clearConnectionError: () => void;
@@ -173,6 +176,24 @@ export const useBetsStore = create<BetsState>((set, get) => ({
       set({ connectionError: true });
       const userId = get().bets.find((b) => b.id === betId)?.user_id;
       if (userId) get().fetchBets(userId);
+    }
+  },
+
+  gradePendingBets: async (userId) => {
+    try {
+      const summary = await checkAndGradePendingBets(userId);
+
+      // If any bets were graded, refetch to get updated data
+      if (summary.totalGraded > 0) {
+        const bets = await dataService.getBets(userId);
+        const { analytics, metrics } = recalculate(bets, get().settings);
+        set({ bets, analytics, metrics, connectionError: false });
+      }
+
+      return summary;
+    } catch {
+      set({ connectionError: true });
+      return { totalChecked: 0, totalGraded: 0, results: [] };
     }
   },
 

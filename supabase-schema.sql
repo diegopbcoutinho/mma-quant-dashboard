@@ -72,7 +72,68 @@ CREATE POLICY "Users can update their own settings"
   ON settings FOR UPDATE
   USING (auth.uid() = user_id);
 
+-- ── Fight Results Table ────────────────────────────────
+-- Stores verified fight outcomes for automatic bet grading.
+-- Can be populated manually or via external API in the future.
+CREATE TABLE IF NOT EXISTS fight_results (
+  fight_id TEXT PRIMARY KEY,
+  event_id TEXT DEFAULT '',
+  event_name TEXT DEFAULT '',
+  fighter_a TEXT NOT NULL,
+  fighter_b TEXT NOT NULL,
+  winner TEXT NOT NULL,
+  method TEXT DEFAULT '',
+  end_round INTEGER DEFAULT 0,
+  end_time TEXT DEFAULT '',
+  is_completed BOOLEAN DEFAULT false,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ── User Scores Table ─────────────────────────────────
+-- Persists latest FightEdge score for each user.
+CREATE TABLE IF NOT EXISTS user_scores (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  score NUMERIC(5, 2) DEFAULT 0,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add graded_at column to bets (for tracking auto-graded bets)
+ALTER TABLE bets ADD COLUMN IF NOT EXISTS graded_at TIMESTAMP WITH TIME ZONE;
+
+-- ── Row Level Security for new tables ─────────────────
+ALTER TABLE fight_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_scores ENABLE ROW LEVEL SECURITY;
+
+-- Fight results: readable by all authenticated users
+CREATE POLICY "Authenticated users can view fight results"
+  ON fight_results FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+-- Fight results: only service role can insert/update (or admin)
+CREATE POLICY "Authenticated users can insert fight results"
+  ON fight_results FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can update fight results"
+  ON fight_results FOR UPDATE
+  USING (auth.role() = 'authenticated');
+
+-- User scores: users can only see/modify their own
+CREATE POLICY "Users can view their own score"
+  ON user_scores FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can upsert their own score"
+  ON user_scores FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own score"
+  ON user_scores FOR UPDATE
+  USING (auth.uid() = user_id);
+
 -- ── Indexes ─────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_bets_user_id ON bets(user_id);
 CREATE INDEX IF NOT EXISTS idx_bets_created_at ON bets(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_fight_results_event ON fight_results(event_name);
+CREATE INDEX IF NOT EXISTS idx_fight_results_completed ON fight_results(is_completed);

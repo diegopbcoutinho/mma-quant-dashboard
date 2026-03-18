@@ -20,6 +20,7 @@ export interface Bet {
   bankroll_after: number;
   roi: number;
   created_at?: string;
+  graded_at?: string;   // Set when auto-graded by grading engine
 }
 
 export interface Settings {
