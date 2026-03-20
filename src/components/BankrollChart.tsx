@@ -12,34 +12,29 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import type { Bet } from '@/types';
-import { calculateBankrollTimeline } from '@/services/bankrollEngine';
-import { useBetsStore } from '@/stores/useBetsStore';
+import type { BankrollTimeline } from '@/services/bankrollEngine';
 import { fmt } from '@/lib/helpers';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip);
 
 interface BankrollChartProps {
   bets: Bet[];
+  timeline: BankrollTimeline;
+  initialBankroll: number;
 }
 
-export default function BankrollChart({ bets }: BankrollChartProps) {
-  const { globals } = useBetsStore();
-
-  // Use bankrollEngine as the single source of truth
-  const { timeline, settledBets } = useMemo(() => {
-    const tl = calculateBankrollTimeline(bets, globals.bancaInicial);
-
-    // Get the settled bets in chronological order (matching engine order)
-    const sorted = [...bets]
-      .filter((b) => b.result === 'W' || b.result === 'L')
-      .sort((a, b) => {
-        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        return dateA - dateB;
-      });
-
-    return { timeline: tl, settledBets: sorted };
-  }, [bets, globals.bancaInicial]);
+export default function BankrollChart({ bets, timeline, initialBankroll }: BankrollChartProps) {
+  const settledBets = useMemo(
+    () =>
+      [...bets]
+        .filter((b) => b.result === 'W' || b.result === 'L')
+        .sort((a, b) => {
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateA - dateB;
+        }),
+    [bets]
+  );
 
   if (settledBets.length === 0 || timeline.entries.length === 0) {
     return (
@@ -52,19 +47,16 @@ export default function BankrollChart({ bets }: BankrollChartProps) {
     );
   }
 
-  // Build chart data from engine timeline
-  const labels = settledBets.map((b) => b.date || '');
-  const data = [globals.bancaInicial, ...timeline.entries.map((e) => e.bankrollAfter)];
-  const chartLabels = ['Start', ...labels];
+  const labels = ['Start', ...settledBets.map((b) => b.date || '')];
+  const data = [initialBankroll, ...timeline.entries.map((e) => e.bankrollAfter)];
 
-  // Point colors: first point neutral, then W=gold, L=red
   const pointColors = [
-    '#D4AF37', // start point
+    '#D4AF37',
     ...settledBets.map((b) => (b.result === 'W' ? '#D4AF37' : '#E63946')),
   ];
 
   const chartData = {
-    labels: chartLabels,
+    labels,
     datasets: [
       {
         label: 'Bankroll (USD)',
@@ -90,7 +82,7 @@ export default function BankrollChart({ bets }: BankrollChartProps) {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: { parsed: { y: number }; dataIndex: number }) =>
+          label: (ctx: { parsed: { y: number } }) =>
             ` Bankroll: ${fmt(ctx.parsed.y ?? 0)}`,
           afterLabel: (ctx: { dataIndex: number }) => {
             if (ctx.dataIndex === 0) return ' Starting Bankroll';

@@ -103,7 +103,11 @@ export default function DashboardPage() {
           </p>
         </section>
       ) : (
-        <BankrollChart bets={bets} />
+        <BankrollChart
+          bets={bets}
+          timeline={metrics?.timeline ?? { entries: [], currentBankroll: globals.bancaInicial, totalProfit: 0, totalRisked: 0 }}
+          initialBankroll={globals.bancaInicial}
+        />
       )}
 
       {/* Global Controls */}
