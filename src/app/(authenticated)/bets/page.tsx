@@ -9,6 +9,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BetModal from '@/components/NewBetModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
+import { generateBetCard, downloadShareCard, type BetCardData } from '@/services/shareCardGenerator';
 import type { Bet } from '@/types';
 
 type Tab = 'finished' | 'future' | 'todo';
@@ -304,6 +305,36 @@ export default function BetsPage() {
                         )}
                         <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                            {(b.result === 'W' || b.result === 'L') && (
+                              <button
+                                onClick={() => {
+                                  const cardData: BetCardData = {
+                                    event: b.event_name || '',
+                                    fight: b.fight_name || '',
+                                    fighter: b.fighter || '',
+                                    opponent: b.opponent || '',
+                                    odds: b.odds,
+                                    stake: b.stake_usd,
+                                    result: b.result as 'W' | 'L',
+                                    pl: b.pl_usd,
+                                    date: b.date || '',
+                                  };
+                                  const img = generateBetCard(cardData);
+                                  downloadShareCard(img, `FightEdge_${(b.fight_name || 'bet').replace(/[^a-zA-Z0-9]/g, '_')}.png`);
+                                }}
+                                title="Share card"
+                                style={{
+                                  background: 'transparent', border: '1px solid var(--border-color)',
+                                  color: 'var(--text-muted)', width: 30, height: 30, borderRadius: 6,
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 12, transition: 'color 200ms, border-color 200ms',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-gold)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                              >
+                                <i className="fa-solid fa-share-from-square"></i>
+                              </button>
+                            )}
                             <button
                               onClick={() => setEditingBet(b)}
                               title="Edit"

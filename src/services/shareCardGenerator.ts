@@ -488,6 +488,175 @@ export function generateEventCard(data: EventCardData): string {
   return canvas.toDataURL('image/png');
 }
 
+// ── SINGLE BET PERFORMANCE CARD ─────────────────────────────────────────────
+
+export interface BetCardData {
+  event: string;
+  fight: string;
+  fighter: string;
+  opponent: string;
+  odds: number;
+  stake: number;
+  result: 'W' | 'L';
+  pl: number;
+  date: string;
+}
+
+/**
+ * Generate a premium single-bet card (1200x675).
+ */
+export function generateBetCard(data: BetCardData): string {
+  const W = 1200, H = 675;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d')!;
+
+  // ── Background ──
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#0c0c10');
+  grad.addColorStop(0.5, '#0a0a0e');
+  grad.addColorStop(1, '#08080c');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // FE watermark
+  ctx.save();
+  ctx.globalAlpha = 0.03;
+  ctx.font = 'bold 80px "Inter", sans-serif';
+  ctx.fillStyle = '#D4AF37';
+  for (let y = -40; y < H + 80; y += 100) {
+    for (let x = -40; x < W + 80; x += 160) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.25);
+      ctx.fillText('FE', 0, 0);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+
+  // Top accent
+  const accentGrad = ctx.createLinearGradient(0, 0, W, 0);
+  accentGrad.addColorStop(0, 'rgba(212,175,55,0)');
+  accentGrad.addColorStop(0.3, 'rgba(212,175,55,0.8)');
+  accentGrad.addColorStop(0.7, 'rgba(212,175,55,0.8)');
+  accentGrad.addColorStop(1, 'rgba(212,175,55,0)');
+  ctx.fillStyle = accentGrad;
+  ctx.fillRect(0, 0, W, 4);
+
+  // Logo
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = 'bold 22px "Inter", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('FIGHTEDGE', 40, 50);
+
+  // ── Result badge (large, centered) ──
+  const isWin = data.result === 'W';
+  const resultColor = isWin ? '#D4AF37' : '#E63946';
+  const resultBg = isWin ? 'rgba(212,175,55,0.12)' : 'rgba(230,57,70,0.12)';
+  const resultText = isWin ? 'WIN' : 'LOSS';
+
+  // Large result badge top-right
+  ctx.fillStyle = resultBg;
+  roundRect(ctx, W - 180, 25, 140, 44, 10);
+  ctx.fill();
+  ctx.strokeStyle = isWin ? 'rgba(212,175,55,0.3)' : 'rgba(230,57,70,0.3)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, W - 180, 25, 140, 44, 10);
+  ctx.stroke();
+  ctx.font = 'bold 20px "Inter", sans-serif';
+  ctx.fillStyle = resultColor;
+  ctx.textAlign = 'center';
+  ctx.fillText(resultText, W - 110, 54);
+
+  // ── Event ──
+  ctx.textAlign = 'left';
+  ctx.font = '500 13px "Inter", sans-serif';
+  ctx.fillStyle = '#888891';
+  ctx.fillText(data.event.toUpperCase(), 40, 110);
+
+  // ── Fight name (big) ──
+  ctx.font = 'bold 48px "Inter", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  const fightDisplay = data.fight.length > 35 ? data.fight.slice(0, 32) + '...' : data.fight;
+  ctx.fillText(fightDisplay.toUpperCase(), 40, 170);
+
+  // ── Divider ──
+  ctx.fillStyle = 'rgba(212,175,55,0.3)';
+  ctx.fillRect(40, 195, W - 80, 1);
+
+  // ── Fighter picked label ──
+  ctx.font = '500 13px "Inter", sans-serif';
+  ctx.fillStyle = '#888891';
+  ctx.fillText('PICK', 40, 245);
+  ctx.font = 'bold 28px "Inter", sans-serif';
+  ctx.fillStyle = resultColor;
+  ctx.fillText(data.fighter.toUpperCase(), 40, 285);
+
+  // ── Stats Grid ──
+  const statsY = 340;
+  const statBoxW = 220;
+  const statGap = 30;
+  const statsItems = [
+    { label: 'ODDS', value: `@${data.odds.toFixed(3)}`, color: '#ffffff' },
+    { label: 'STAKE', value: `$${data.stake.toFixed(2)}`, color: '#ffffff' },
+    { label: 'P/L', value: `${data.pl >= 0 ? '+' : ''}$${data.pl.toFixed(2)}`, color: data.pl >= 0 ? '#D4AF37' : '#E63946' },
+    { label: 'ROI', value: `${data.stake > 0 ? ((data.pl / data.stake) * 100).toFixed(1) : '0.0'}%`, color: data.pl >= 0 ? '#D4AF37' : '#E63946' },
+  ];
+
+  statsItems.forEach((s, i) => {
+    const x = 40 + i * (statBoxW + statGap);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    roundRect(ctx, x, statsY, statBoxW, 100, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, x, statsY, statBoxW, 100, 10);
+    ctx.stroke();
+
+    ctx.font = '500 11px "Inter", sans-serif';
+    ctx.fillStyle = '#888891';
+    ctx.textAlign = 'left';
+    ctx.fillText(s.label, x + 18, statsY + 32);
+
+    ctx.font = 'bold 30px "Inter", sans-serif';
+    ctx.fillStyle = s.color;
+    ctx.fillText(s.value, x + 18, statsY + 72);
+  });
+
+  // ── Date (center) ──
+  ctx.font = '400 14px "Inter", sans-serif';
+  ctx.fillStyle = '#555';
+  ctx.textAlign = 'center';
+  ctx.fillText(data.date, W / 2, 510);
+
+  // ── Bottom bar ──
+  ctx.fillStyle = 'rgba(212,175,55,0.08)';
+  ctx.fillRect(0, H - 50, W, 50);
+  ctx.fillStyle = 'rgba(212,175,55,0.2)';
+  ctx.fillRect(0, H - 50, W, 1);
+
+  ctx.font = 'bold 14px "Inter", sans-serif';
+  ctx.fillStyle = '#D4AF37';
+  ctx.textAlign = 'left';
+  ctx.fillText('FIGHTEDGE', 40, H - 20);
+  ctx.font = '400 12px "Inter", sans-serif';
+  ctx.fillStyle = '#666';
+  ctx.fillText('  ·  Build your fight edge.', 130, H - 20);
+
+  ctx.font = '400 12px "Inter", sans-serif';
+  ctx.fillStyle = '#555';
+  ctx.textAlign = 'right';
+  ctx.fillText(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), W - 40, H - 20);
+
+  ctx.fillStyle = accentGrad;
+  ctx.fillRect(0, H - 3, W, 3);
+
+  return canvas.toDataURL('image/png');
+}
+
 /** Helper: draw rounded rectangle path */
 function roundRect(
   ctx: CanvasRenderingContext2D,
