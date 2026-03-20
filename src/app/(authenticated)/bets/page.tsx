@@ -40,7 +40,7 @@ function exportBetsCSV(bets: Bet[]) {
 }
 
 export default function BetsPage() {
-  const { bets, loading, currentTab, setCurrentTab, updateBetResult, removeBet, gradePendingBets } = useBetsStore();
+  const { bets, loading, currentTab, setCurrentTab, updateBetResult, removeBet, gradePendingBets, metrics } = useBetsStore();
   const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -103,6 +103,17 @@ export default function BetsPage() {
     );
     return { totalStake, totalProfit, count: tabFiltered.length };
   }, [tabFiltered, currentTab]);
+
+  // Map betId → bankrollAfter from the metrics timeline
+  const bankrollMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (metrics?.timeline?.entries) {
+      for (const entry of metrics.timeline.entries) {
+        map.set(entry.betId, entry.bankrollAfter);
+      }
+    }
+    return map;
+  }, [metrics]);
 
   const isFinishedTab = currentTab === 'finished';
   const tabs: { id: Tab; label: string }[] = [
@@ -287,7 +298,7 @@ export default function BetsPage() {
                           <>
                             <td className={plClass}>{plText}</td>
                             <td>
-                              {b.bankroll_after ? fmt(b.bankroll_after) : '--'}
+                              {b.id && bankrollMap.has(b.id) ? fmt(bankrollMap.get(b.id)!) : '--'}
                             </td>
                           </>
                         )}
