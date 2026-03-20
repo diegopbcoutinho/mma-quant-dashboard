@@ -4,6 +4,7 @@ import { useBetsStore } from '@/stores/useBetsStore';
 import { fmt } from '@/lib/helpers';
 import BankrollChart from '@/components/BankrollChart';
 import { KPISkeleton, ChartSkeleton } from '@/components/LoadingSkeleton';
+import ShareCard from '@/components/ShareCard';
 
 export default function DashboardPage() {
   const { bets, metrics, globals, loading } = useBetsStore();
@@ -125,6 +126,9 @@ export default function DashboardPage() {
           <span className="value">${unitValue.toFixed(2)}</span>
         </div>
       </section>
+
+      {/* Share Card */}
+      <ShareCard />
 
       {/* Bottom grid */}
       <div className="dashboard-bottom-grid">
