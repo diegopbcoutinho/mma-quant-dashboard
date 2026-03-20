@@ -1,17 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useBetsStore } from '@/stores/useBetsStore';
 import RoiChart from '@/components/RoiChart';
 import FightEdgeScore from '@/components/FightEdgeScore';
 import { KPISkeleton } from '@/components/LoadingSkeleton';
+import { buildEventCardData, generateEventCard, downloadShareCard } from '@/services/shareCardGenerator';
 import type { EventProfit, FighterStat } from '@/types';
 
 export default function AnalyticsPage() {
-  const { analytics, loading } = useBetsStore();
+  const { analytics, bets, loading } = useBetsStore();
   const [profitTab, setProfitTab] = useState<'event' | 'fighter'>('event');
   const [showAll, setShowAll] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleShareCard = useCallback((name: string, mode: 'event' | 'fighter') => {
+    const data = buildEventCardData(bets, name, mode);
+    if (!data) return;
+    const img = generateEventCard(data);
+    downloadShareCard(img, `FightEdge_${name.replace(/[^a-zA-Z0-9]/g, '_')}.png`);
+  }, [bets]);
 
   useEffect(() => {
     if (analytics && panelRef.current) {
@@ -176,6 +184,7 @@ export default function AnalyticsPage() {
                     <th>Bets</th>
                     <th>Win%</th>
                     <th>Profit</th>
+                    <th style={{ width: 40 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -214,6 +223,22 @@ export default function AnalyticsPage() {
                           <td className={cls}>
                             {sign}${f.profit.toFixed(2)}
                           </td>
+                          <td>
+                            <button
+                              className="share-event-btn"
+                              onClick={() => handleShareCard(f.fighter, 'fighter')}
+                              title="Export card"
+                              style={{
+                                background: 'transparent', border: 'none', color: 'var(--text-muted)',
+                                cursor: 'pointer', fontSize: 13, padding: 4, borderRadius: 4,
+                                transition: 'color 200ms',
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-gold)'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+                            >
+                              <i className="fa-solid fa-share-from-square"></i>
+                            </button>
+                          </td>
                         </tr>
                       );
                     }
@@ -228,6 +253,22 @@ export default function AnalyticsPage() {
                         <td>{e.winRate.toFixed(0)}%</td>
                         <td className={cls}>
                           {sign}${e.profit.toFixed(2)}
+                        </td>
+                        <td>
+                          <button
+                            className="share-event-btn"
+                            onClick={() => handleShareCard(e.event, 'event')}
+                            title="Export card"
+                            style={{
+                              background: 'transparent', border: 'none', color: 'var(--text-muted)',
+                              cursor: 'pointer', fontSize: 13, padding: 4, borderRadius: 4,
+                              transition: 'color 200ms',
+                            }}
+                            onMouseEnter={(ev) => { ev.currentTarget.style.color = 'var(--accent-gold)'; }}
+                            onMouseLeave={(ev) => { ev.currentTarget.style.color = 'var(--text-muted)'; }}
+                          >
+                            <i className="fa-solid fa-share-from-square"></i>
+                          </button>
                         </td>
                       </tr>
                     );
