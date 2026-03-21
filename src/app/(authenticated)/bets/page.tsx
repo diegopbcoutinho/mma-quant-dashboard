@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useBetsStore } from '@/stores/useBetsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { fmt } from '@/lib/helpers';
@@ -45,20 +46,91 @@ export default function BetsPage() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingBet, setEditingBet] = useState<Bet | null>(null);
-  const [editingBetId, setEditingBetId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bet | null>(null);
   const [grading, setGrading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const BETS_PER_PAGE = 20;
 
+  // ── Single dropdown state (page-level) ──
+  const [dropdownBetId, setDropdownBetId] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  // Map of betId → badge DOM element (for positioning)
+  const badgeRefs = useRef<Map<string, HTMLSpanElement>>(new Map());
+
+  const openDropdown = useCallback((betId: string) => {
+    const el = badgeRefs.current.get(betId);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dropdownH = 160;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const left = Math.min(rect.left, window.innerWidth - 170);
+
+    if (spaceBelow > dropdownH + 10) {
+      setDropdownPos({ top: rect.bottom + 6, left });
+    } else {
+      setDropdownPos({ top: rect.top - dropdownH - 6, left });
+    }
+    setDropdownBetId(betId);
+  }, []);
+
+  const closeDropdown = useCallback(() => {
+    setDropdownBetId(null);
+    setDropdownPos(null);
+  }, []);
+
+  const toggleDropdown = useCallback((betId: string) => {
+    if (dropdownBetId === betId) {
+      closeDropdown();
+    } else {
+      openDropdown(betId);
+    }
+  }, [dropdownBetId, closeDropdown, openDropdown]);
+
+  // Close dropdown on outside click / scroll
+  useEffect(() => {
+    if (!dropdownBetId) return;
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      const badgeEl = dropdownBetId ? badgeRefs.current.get(dropdownBetId) : null;
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(target) &&
+        (!badgeEl || !badgeEl.contains(target))
+      ) {
+        closeDropdown();
+      }
+    };
+    const handleScroll = () => closeDropdown();
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [dropdownBetId, closeDropdown]);
+
   // Track rows being animated out (result just changed → leaving current tab)
   const [exitingRows, setExitingRows] = useState<Set<string>>(new Set());
   // Track rows that just got graded (flash effect) — stores betId → result type
   const [flashRows, setFlashRows] = useState<Map<string, 'W' | 'L'>>(new Map());
 
-  // Wrap updateBetResult with animation
-  const handleResultChange = useCallback((betId: string, result: 'W' | 'L' | '-' | '', stakeUsd: number, odds: number) => {
+  // Find the bet for the active dropdown
+  const dropdownBet = useMemo(() => {
+    if (!dropdownBetId) return null;
+    return bets.find((b) => b.id === dropdownBetId) ?? null;
+  }, [dropdownBetId, bets]);
+
+  // Handle dropdown result selection
+  const handleDropdownSelect = useCallback((result: 'W' | 'L' | '-' | '') => {
+    if (!dropdownBet?.id) return;
+    const betId = dropdownBet.id;
+    const stakeUsd = dropdownBet.stake_usd;
+    const odds = dropdownBet.odds;
+    closeDropdown();
+
     // Flash the row with the correct color based on selected result
     if (result === 'W' || result === 'L') {
       setFlashRows(prev => new Map(prev).set(betId, result));
@@ -75,7 +147,7 @@ export default function BetsPage() {
       updateBetResult(betId, result, stakeUsd, odds);
       setExitingRows(prev => { const n = new Set(prev); n.delete(betId); return n; });
     }, 800);
-  }, [updateBetResult]);
+  }, [dropdownBet, closeDropdown, updateBetResult]);
 
   // Wrap removeBet with animation
   const handleRemoveBet = useCallback((betId: string) => {
@@ -179,6 +251,41 @@ export default function BetsPage() {
     }
     setDeleteTarget(null);
   }, [deleteTarget, handleRemoveBet]);
+
+  // Helper: register badge ref
+  const setBadgeRef = useCallback((betId: string, el: HTMLSpanElement | null) => {
+    if (el) {
+      badgeRefs.current.set(betId, el);
+    } else {
+      badgeRefs.current.delete(betId);
+    }
+  }, []);
+
+  // Share card handler
+  const handleShare = useCallback((b: Bet) => {
+    const cardData: BetCardData = {
+      event: b.event_name || '',
+      fight: b.fight_name || '',
+      fighter: b.fighter || '',
+      opponent: b.opponent || '',
+      odds: b.odds,
+      stake: b.stake_usd,
+      result: b.result as 'W' | 'L',
+      pl: b.pl_usd,
+      date: b.date || '',
+    };
+    const img = generateBetCard(cardData);
+    downloadShareCard(img, `FightEdge_${(b.fight_name || 'bet').replace(/[^a-zA-Z0-9]/g, '_')}.png`);
+  }, []);
+
+  // Dropdown button style
+  const btnStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 8,
+    width: '100%', padding: '10px 14px', background: 'transparent',
+    border: 'none', fontSize: 13, cursor: 'pointer',
+    textAlign: 'left', borderRadius: 6, fontFamily: 'var(--font-ui)',
+    fontWeight: 500,
+  };
 
   return (
     <main className="page-content">
@@ -295,14 +402,11 @@ export default function BetsPage() {
                 >
                   <div className="bmc-top">
                     <div className="bmc-fight">{b.fight_name || '--'}</div>
-                    <ResultBadge
+                    <BadgeOnly
                       bet={b}
-                      isEditing={editingBetId === b.id}
-                      onToggle={() => setEditingBetId(editingBetId === b.id ? null : (b.id ?? null))}
-                      onSelect={(result) => {
-                        if (b.id) handleResultChange(b.id, result, b.stake_usd, b.odds);
-                        setEditingBetId(null);
-                      }}
+                      refCallback={setBadgeRef}
+                      isActive={dropdownBetId === b.id}
+                      onToggle={() => b.id && toggleDropdown(b.id)}
                     />
                   </div>
                   <div className="bmc-event">{b.event_name || '--'}</div>
@@ -328,20 +432,7 @@ export default function BetsPage() {
                   </div>
                   <div className="bmc-actions">
                     {(b.result === 'W' || b.result === 'L') && (
-                      <button
-                        onClick={() => {
-                          const cardData: BetCardData = {
-                            event: b.event_name || '', fight: b.fight_name || '',
-                            fighter: b.fighter || '', opponent: b.opponent || '',
-                            odds: b.odds, stake: b.stake_usd,
-                            result: b.result as 'W' | 'L', pl: b.pl_usd, date: b.date || '',
-                          };
-                          const img = generateBetCard(cardData);
-                          downloadShareCard(img, `FightEdge_${(b.fight_name || 'bet').replace(/[^a-zA-Z0-9]/g, '_')}.png`);
-                        }}
-                        className="bmc-action-btn"
-                        title="Share"
-                      >
+                      <button onClick={() => handleShare(b)} className="bmc-action-btn" title="Share">
                         <i className="fa-solid fa-share-from-square"></i>
                       </button>
                     )}
@@ -409,29 +500,16 @@ export default function BetsPage() {
                         className={`bet-row ${isExiting ? 'bet-row-exit' : ''} ${flashResult === 'W' ? 'bet-row-flash-win' : flashResult === 'L' ? 'bet-row-flash-loss' : ''}`}
                       >
                         <td>{b.date || '--'}</td>
-                        <td
-                          style={{
-                            color: 'var(--text-muted)',
-                            maxWidth: 180,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {b.event_name || '--'}
-                        </td>
+                        <td className="td-event">{b.event_name || '--'}</td>
                         <td className="fighter-name">{b.fight_name || '--'}</td>
                         <td>{b.odds > 0 ? b.odds.toFixed(3) : '--'}</td>
                         <td>{fmt(b.stake_usd)}</td>
                         <td>
-                          <ResultBadge
+                          <BadgeOnly
                             bet={b}
-                            isEditing={editingBetId === b.id}
-                            onToggle={() => setEditingBetId(editingBetId === b.id ? null : (b.id ?? null))}
-                            onSelect={(result) => {
-                              if (b.id) handleResultChange(b.id, result, b.stake_usd, b.odds);
-                              setEditingBetId(null);
-                            }}
+                            refCallback={setBadgeRef}
+                            isActive={dropdownBetId === b.id}
+                            onToggle={() => b.id && toggleDropdown(b.id)}
                           />
                         </td>
                         {isFinishedTab && (
@@ -443,63 +521,16 @@ export default function BetsPage() {
                           </>
                         )}
                         <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                          <div className="action-btns">
                             {(b.result === 'W' || b.result === 'L') && (
-                              <button
-                                onClick={() => {
-                                  const cardData: BetCardData = {
-                                    event: b.event_name || '',
-                                    fight: b.fight_name || '',
-                                    fighter: b.fighter || '',
-                                    opponent: b.opponent || '',
-                                    odds: b.odds,
-                                    stake: b.stake_usd,
-                                    result: b.result as 'W' | 'L',
-                                    pl: b.pl_usd,
-                                    date: b.date || '',
-                                  };
-                                  const img = generateBetCard(cardData);
-                                  downloadShareCard(img, `FightEdge_${(b.fight_name || 'bet').replace(/[^a-zA-Z0-9]/g, '_')}.png`);
-                                }}
-                                title="Share card"
-                                style={{
-                                  background: 'transparent', border: '1px solid var(--border-color)',
-                                  color: 'var(--text-muted)', width: 30, height: 30, borderRadius: 6,
-                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: 12, transition: 'color 200ms, border-color 200ms',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-gold)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
-                              >
+                              <button onClick={() => handleShare(b)} className="action-icon-btn" title="Share card">
                                 <i className="fa-solid fa-share-from-square"></i>
                               </button>
                             )}
-                            <button
-                              onClick={() => setEditingBet(b)}
-                              title="Edit"
-                              style={{
-                                background: 'transparent', border: '1px solid var(--border-color)',
-                                color: 'var(--text-muted)', width: 30, height: 30, borderRadius: 6,
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 12, transition: 'color 200ms, border-color 200ms',
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-gold)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
-                            >
+                            <button onClick={() => setEditingBet(b)} className="action-icon-btn" title="Edit">
                               <i className="fa-solid fa-pen-to-square"></i>
                             </button>
-                            <button
-                              onClick={() => setDeleteTarget(b)}
-                              title="Delete"
-                              style={{
-                                background: 'transparent', border: '1px solid var(--border-color)',
-                                color: 'var(--text-muted)', width: 30, height: 30, borderRadius: 6,
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 12, transition: 'color 200ms, border-color 200ms',
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-red)'; e.currentTarget.style.borderColor = 'rgba(230,57,70,0.4)'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
-                            >
+                            <button onClick={() => setDeleteTarget(b)} className="action-icon-btn action-icon-delete" title="Delete">
                               <i className="fa-solid fa-trash-can"></i>
                             </button>
                           </div>
@@ -577,6 +608,52 @@ export default function BetsPage() {
         )}
       </section>
 
+      {/* ── Single Result Dropdown (page-level portal) ── */}
+      {dropdownBetId && dropdownPos && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            background: 'rgba(15, 15, 18, 0.98)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 10,
+            padding: 6,
+            zIndex: 9999,
+            minWidth: 150,
+            maxWidth: 'calc(100vw - 32px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+            backdropFilter: 'blur(12px)',
+            animation: 'fadeInScale 150ms ease',
+          }}
+        >
+          <button
+            onClick={() => handleDropdownSelect('W')}
+            className="result-dropdown-btn result-dropdown-win"
+            style={btnStyle}
+          >
+            <i className="fa-solid fa-check"></i> WIN
+          </button>
+          <button
+            onClick={() => handleDropdownSelect('L')}
+            className="result-dropdown-btn result-dropdown-loss"
+            style={btnStyle}
+          >
+            <i className="fa-solid fa-xmark"></i> LOSS
+          </button>
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }}></div>
+          <button
+            onClick={() => handleDropdownSelect('-')}
+            className="result-dropdown-btn result-dropdown-pending"
+            style={btnStyle}
+          >
+            <i className="fa-solid fa-clock"></i> PENDING
+          </button>
+        </div>,
+        document.body
+      )}
+
       {showModal && <BetModal onClose={() => setShowModal(false)} />}
       {editingBet && <BetModal editBet={editingBet} onClose={() => setEditingBet(null)} />}
 
@@ -602,39 +679,19 @@ export default function BetsPage() {
   );
 }
 
-/** Clickable result badge — simple absolute-positioned dropdown (no portal) */
-function ResultBadge({
+/** Badge-only component — renders the colored badge, no dropdown logic */
+function BadgeOnly({
   bet,
-  isEditing,
+  refCallback,
+  isActive,
   onToggle,
-  onSelect,
 }: {
-  bet: { result: string; id?: string };
-  isEditing: boolean;
+  bet: Bet;
+  refCallback: (betId: string, el: HTMLSpanElement | null) => void;
+  isActive: boolean;
   onToggle: () => void;
-  onSelect: (result: 'W' | 'L' | '-' | '') => void;
 }) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!isEditing) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        onToggle();
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
-    };
-  }, [isEditing, onToggle]);
-
-  // Access graded_at from the full bet object if available
-  const fullBet = bet as Bet;
-  const isAutoGraded = !!fullBet.graded_at;
+  const isAutoGraded = !!bet.graded_at;
 
   let badgeClass = 'badge-pending';
   let badgeText = 'PENDING';
@@ -642,73 +699,17 @@ function ResultBadge({
   else if (bet.result === 'L') { badgeClass = 'badge-loss'; badgeText = 'LOSS'; }
   else if (bet.result === '') { badgeText = 'TO DO'; }
 
-  const btnStyle: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 8,
-    width: '100%', padding: '10px 14px', background: 'transparent',
-    border: 'none', fontSize: 13, cursor: 'pointer',
-    textAlign: 'left', borderRadius: 6, fontFamily: 'var(--font-ui)',
-    fontWeight: 500,
-  };
-
   return (
-    <div ref={wrapperRef} style={{ position: 'relative', display: 'inline-block' }}>
-      <span
-        className={`result-badge ${badgeClass}`}
-        style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
-        onClick={onToggle}
-        title={isAutoGraded ? 'Auto graded by FightEdge — Click to change' : 'Click to change result'}
-      >
-        {badgeText}
-        {isAutoGraded && <i className="fa-solid fa-robot" style={{ fontSize: 9, opacity: 0.5 }} title="Auto graded by FightEdge"></i>}
-        <i className="fa-solid fa-caret-down" style={{ fontSize: 9, opacity: 0.5 }}></i>
-      </span>
-
-      {isEditing && (
-        <div
-          className="result-dropdown"
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            marginTop: 6,
-            background: 'rgba(15, 15, 18, 0.98)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 10,
-            padding: 6,
-            zIndex: 9999,
-            minWidth: 150,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(12px)',
-            animation: 'fadeInScale 150ms ease',
-          }}
-        >
-          <button
-            onClick={() => onSelect('W')}
-            style={{ ...btnStyle, color: 'var(--accent-gold)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(212,175,55,0.12)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            <i className="fa-solid fa-check"></i> WIN
-          </button>
-          <button
-            onClick={() => onSelect('L')}
-            style={{ ...btnStyle, color: 'var(--accent-red)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(230,57,70,0.12)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            <i className="fa-solid fa-xmark"></i> LOSS
-          </button>
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }}></div>
-          <button
-            onClick={() => onSelect('-')}
-            style={{ ...btnStyle, color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            <i className="fa-solid fa-clock"></i> PENDING
-          </button>
-        </div>
-      )}
-    </div>
+    <span
+      ref={(el) => { if (bet.id) refCallback(bet.id, el); }}
+      className={`result-badge ${badgeClass} ${isActive ? 'result-badge-active' : ''}`}
+      style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
+      onClick={onToggle}
+      title={isAutoGraded ? 'Auto graded by FightEdge — Click to change' : 'Click to change result'}
+    >
+      {badgeText}
+      {isAutoGraded && <i className="fa-solid fa-robot" style={{ fontSize: 9, opacity: 0.5 }} title="Auto graded by FightEdge"></i>}
+      <i className="fa-solid fa-caret-down" style={{ fontSize: 9, opacity: 0.5 }}></i>
+    </span>
   );
 }
