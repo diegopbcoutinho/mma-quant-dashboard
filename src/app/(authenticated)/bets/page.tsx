@@ -55,18 +55,20 @@ export default function BetsPage() {
 
   // Track rows being animated out (result just changed → leaving current tab)
   const [exitingRows, setExitingRows] = useState<Set<string>>(new Set());
-  // Track rows that just got graded (flash effect)
-  const [flashRows, setFlashRows] = useState<Set<string>>(new Set());
+  // Track rows that just got graded (flash effect) — stores betId → result type
+  const [flashRows, setFlashRows] = useState<Map<string, 'W' | 'L'>>(new Map());
 
   // Wrap updateBetResult with animation
   const handleResultChange = useCallback((betId: string, result: 'W' | 'L' | '-' | '', stakeUsd: number, odds: number) => {
-    // Flash the row
-    setFlashRows(prev => new Set(prev).add(betId));
+    // Flash the row with the correct color based on selected result
+    if (result === 'W' || result === 'L') {
+      setFlashRows(prev => new Map(prev).set(betId, result));
+    }
 
     // After flash, start exit animation
     setTimeout(() => {
       setExitingRows(prev => new Set(prev).add(betId));
-      setFlashRows(prev => { const n = new Set(prev); n.delete(betId); return n; });
+      setFlashRows(prev => { const n = new Map(prev); n.delete(betId); return n; });
     }, 400);
 
     // After exit animation, apply the actual update
@@ -317,12 +319,12 @@ export default function BetsPage() {
                     }
 
                     const isExiting = b.id ? exitingRows.has(b.id) : false;
-                    const isFlashing = b.id ? flashRows.has(b.id) : false;
+                    const flashResult = b.id ? flashRows.get(b.id) : undefined;
 
                     return (
                       <tr
                         key={b.id || i}
-                        className={`bet-row ${isExiting ? 'bet-row-exit' : ''} ${isFlashing ? (b.result === 'W' || plClass === 'text-gold' ? 'bet-row-flash-win' : 'bet-row-flash-loss') : ''}`}
+                        className={`bet-row ${isExiting ? 'bet-row-exit' : ''} ${flashResult === 'W' ? 'bet-row-flash-win' : flashResult === 'L' ? 'bet-row-flash-loss' : ''}`}
                       >
                         <td>{b.date || '--'}</td>
                         <td
