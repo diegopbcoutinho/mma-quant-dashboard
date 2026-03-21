@@ -622,19 +622,15 @@ function ResultBadge({
   useEffect(() => {
     if (isEditing && badgeRef.current) {
       const rect = badgeRef.current.getBoundingClientRect();
-      const isMobile = window.innerWidth <= 768;
-      const dropdownH = 160; // approximate dropdown height
+      const dropdownH = 160;
+      const spaceAbove = rect.top;
+      const left = Math.min(rect.left, window.innerWidth - 170);
 
-      if (isMobile) {
-        // On mobile, position dropdown below the badge if there's room, else above
-        const spaceBelow = window.innerHeight - rect.bottom;
-        if (spaceBelow > dropdownH + 20) {
-          setPos({ top: rect.bottom + 6, left: Math.min(rect.left, window.innerWidth - 170) });
-        } else {
-          setPos({ top: rect.top - dropdownH - 6, left: Math.min(rect.left, window.innerWidth - 170) });
-        }
+      // Position above if room, else below
+      if (spaceAbove > dropdownH + 10) {
+        setPos({ top: rect.top - dropdownH - 6, left });
       } else {
-        setPos({ top: rect.top - 6, left: rect.left });
+        setPos({ top: rect.bottom + 6, left });
       }
     }
   }, [isEditing]);
@@ -684,7 +680,7 @@ function ResultBadge({
             position: 'fixed',
             top: pos.top,
             left: pos.left,
-            transform: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'none' : 'translateY(-100%)',
+            transform: 'none',
             background: 'rgba(15, 15, 18, 0.98)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10,
