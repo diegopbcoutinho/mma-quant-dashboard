@@ -34,8 +34,14 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
   useEffect(() => {
     if (user) {
-      fetchBets(user.id);
-      fetchSettings(user.id);
+      // Load settings FIRST, then bets — ensures metrics recalculate
+      // with correct initialBankroll (avoids race condition where bets
+      // recalculate with null settings on first render)
+      const load = async () => {
+        await fetchSettings(user.id);
+        await fetchBets(user.id);
+      };
+      load();
     }
   }, [user, fetchBets, fetchSettings]);
 
