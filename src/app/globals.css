@@ -1069,7 +1069,7 @@ body {
 }
 
 .table-responsive {
-    overflow-x: auto;
+    overflow: visible;
 }
 
 table {
@@ -1463,6 +1463,11 @@ tbody tr:nth-child(10) { animation-delay: 270ms; }
 .badge-pending {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-muted);
+}
+
+/* Result dropdown needs to break out of table cells */
+.result-dropdown {
+    white-space: nowrap;
 }
 
 /* Future bets summary bar */

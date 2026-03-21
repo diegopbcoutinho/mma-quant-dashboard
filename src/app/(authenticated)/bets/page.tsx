@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { useBetsStore } from '@/stores/useBetsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { fmt } from '@/lib/helpers';
@@ -424,7 +423,7 @@ export default function BetsPage() {
                         <td className="fighter-name">{b.fight_name || '--'}</td>
                         <td>{b.odds > 0 ? b.odds.toFixed(3) : '--'}</td>
                         <td>{fmt(b.stake_usd)}</td>
-                        <td style={{ position: 'relative' }}>
+                        <td>
                           <ResultBadge
                             bet={b}
                             isEditing={editingBetId === b.id}
@@ -603,7 +602,7 @@ export default function BetsPage() {
   );
 }
 
-/** Clickable result badge — dropdown via portal */
+/** Clickable result badge — simple absolute-positioned dropdown (no portal) */
 function ResultBadge({
   bet,
   isEditing,
@@ -615,36 +614,13 @@ function ResultBadge({
   onToggle: () => void;
   onSelect: (result: 'W' | 'L' | '-' | '') => void;
 }) {
-  const badgeRef = useRef<HTMLSpanElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isEditing && badgeRef.current) {
-      const rect = badgeRef.current.getBoundingClientRect();
-      const dropdownH = 160;
-      const spaceAbove = rect.top;
-      const left = Math.min(rect.left, window.innerWidth - 170);
-
-      // Position above if room, else below
-      if (spaceAbove > dropdownH + 10) {
-        setPos({ top: rect.top - dropdownH - 6, left });
-      } else {
-        setPos({ top: rect.bottom + 6, left });
-      }
-    } else {
-      setPos(null);
-    }
-  }, [isEditing]);
-
+  // Close on outside click
   useEffect(() => {
     if (!isEditing) return;
     const handler = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
-      if (
-        badgeRef.current && !badgeRef.current.contains(target) &&
-        dropdownRef.current && !dropdownRef.current.contains(target)
-      ) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         onToggle();
       }
     };
@@ -674,22 +650,33 @@ function ResultBadge({
     fontWeight: 500,
   };
 
-  const dropdown = isEditing && pos
-    ? createPortal(
+  return (
+    <div ref={wrapperRef} style={{ position: 'relative', display: 'inline-block' }}>
+      <span
+        className={`result-badge ${badgeClass}`}
+        style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
+        onClick={onToggle}
+        title={isAutoGraded ? 'Auto graded by FightEdge — Click to change' : 'Click to change result'}
+      >
+        {badgeText}
+        {isAutoGraded && <i className="fa-solid fa-robot" style={{ fontSize: 9, opacity: 0.5 }} title="Auto graded by FightEdge"></i>}
+        <i className="fa-solid fa-caret-down" style={{ fontSize: 9, opacity: 0.5 }}></i>
+      </span>
+
+      {isEditing && (
         <div
-          ref={dropdownRef}
+          className="result-dropdown"
           style={{
-            position: 'fixed',
-            top: pos.top,
-            left: pos.left,
-            transform: 'none',
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: 6,
             background: 'rgba(15, 15, 18, 0.98)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10,
             padding: 6,
             zIndex: 9999,
             minWidth: 150,
-            maxWidth: 'calc(100vw - 32px)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
             backdropFilter: 'blur(12px)',
             animation: 'fadeInScale 150ms ease',
@@ -720,25 +707,8 @@ function ResultBadge({
           >
             <i className="fa-solid fa-clock"></i> PENDING
           </button>
-        </div>,
-        document.body
-      )
-    : null;
-
-  return (
-    <>
-      <span
-        ref={badgeRef}
-        className={`result-badge ${badgeClass}`}
-        style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
-        onClick={onToggle}
-        title={isAutoGraded ? 'Auto graded by FightEdge — Click to change' : 'Click to change result'}
-      >
-        {badgeText}
-        {isAutoGraded && <i className="fa-solid fa-robot" style={{ fontSize: 9, opacity: 0.5 }} title="Auto graded by FightEdge"></i>}
-        <i className="fa-solid fa-caret-down" style={{ fontSize: 9, opacity: 0.5 }}></i>
-      </span>
-      {dropdown}
-    </>
+        </div>
+      )}
+    </div>
   );
 }
