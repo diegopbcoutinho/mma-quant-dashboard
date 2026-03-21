@@ -4,7 +4,16 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'FightEdge — Build your fight edge.',
   description: 'Professional MMA betting analytics, bankroll tracking, and simulation',
-  icons: { icon: '/favicon.png' },
+  icons: {
+    icon: '/favicon.png',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'FightEdge',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
