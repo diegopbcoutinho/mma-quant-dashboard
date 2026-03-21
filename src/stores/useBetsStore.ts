@@ -27,11 +27,11 @@ interface BetsState {
 
   // UI state
   loading: boolean;
-  currentTab: 'finished' | 'future' | 'todo';
+  currentTab: 'finished' | 'future';
   connectionError: boolean;
 
   // Actions
-  setCurrentTab: (tab: 'finished' | 'future' | 'todo') => void;
+  setCurrentTab: (tab: 'finished' | 'future') => void;
   setGlobals: (globals: Partial<Globals>) => void;
   setDolar: (rate: number) => void;
 

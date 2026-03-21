@@ -12,7 +12,7 @@ import Toast from '@/components/Toast';
 import { generateBetCard, downloadShareCard, type BetCardData } from '@/services/shareCardGenerator';
 import type { Bet } from '@/types';
 
-type Tab = 'finished' | 'future' | 'todo';
+type Tab = 'finished' | 'future';
 
 /** Export bets as CSV */
 function exportBetsCSV(bets: Bet[]) {
@@ -25,7 +25,7 @@ function exportBetsCSV(bets: Bet[]) {
     b.opponent,
     b.odds.toFixed(3),
     b.stake_usd.toFixed(2),
-    b.result === 'W' ? 'Win' : b.result === 'L' ? 'Loss' : b.result === '-' ? 'Pending' : 'To Do',
+    b.result === 'W' ? 'Win' : b.result === 'L' ? 'Loss' : 'Pending',
     b.pl_usd.toFixed(2),
   ]);
 
@@ -75,12 +75,10 @@ export default function BetsPage() {
   const tabFiltered = useMemo(() => {
     return bets.filter((b) => {
       const isFinished = b.result === 'W' || b.result === 'L';
-      const isFuture = b.result === '-';
-      const isTodo = b.result === '';
+      const isFuture = b.result === '-' || b.result === '';
 
       if (currentTab === 'finished') return isFinished;
       if (currentTab === 'future') return isFuture;
-      if (currentTab === 'todo') return isTodo;
       return true;
     });
   }, [bets, currentTab]);
@@ -120,7 +118,6 @@ export default function BetsPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'finished', label: 'Recent Bets' },
     { id: 'future', label: 'Upcoming Bets' },
-    { id: 'todo', label: 'To Do' },
   ];
 
   const handleDeleteConfirm = useCallback(() => {
