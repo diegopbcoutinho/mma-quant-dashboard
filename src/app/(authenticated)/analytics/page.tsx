@@ -9,7 +9,7 @@ import { buildEventCardData, generateEventCard, downloadShareCard } from '@/serv
 import type { EventProfit, FighterStat } from '@/types';
 
 export default function AnalyticsPage() {
-  const { analytics, bets, loading } = useBetsStore();
+  const { analytics, metrics, bets, loading } = useBetsStore();
   const [profitTab, setProfitTab] = useState<'event' | 'fighter'>('event');
   const [showAll, setShowAll] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -78,8 +78,8 @@ export default function AnalyticsPage() {
       icon: 'fa-solid fa-arrow-trend-down',
       color: 'var(--accent-red)',
       label: 'Max Drawdown',
-      value: `${drawdown.maxDDPct.toFixed(1)}%`,
-      unit: `$${drawdown.maxDD.toFixed(2)} from peak $${drawdown.peak.toFixed(2)}`,
+      value: `${(metrics?.maxDrawdownPct ?? 0).toFixed(1)}%`,
+      unit: `$${(metrics?.maxDrawdown ?? 0).toFixed(2)} from peak $${(metrics?.drawdownPeak ?? 0).toFixed(2)}`,
       gold: false,
     },
     {

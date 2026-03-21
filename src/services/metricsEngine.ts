@@ -34,6 +34,7 @@ export interface Metrics {
   // Risk metrics
   maxDrawdown: number;      // absolute USD value
   maxDrawdownPct: number;   // percentage of peak
+  drawdownPeak: number;     // bankroll value at which max drawdown started
 
   // Streaks (chronological)
   bestWinStreak: number;
@@ -84,6 +85,7 @@ export function calculateMetrics(
   let peak = initialBankroll;
   let maxDrawdown = 0;
   let maxDrawdownPct = 0;
+  let drawdownPeak = initialBankroll;
 
   for (const entry of timeline.entries) {
     if (entry.bankrollAfter > peak) {
@@ -93,6 +95,7 @@ export function calculateMetrics(
     if (dd > maxDrawdown) {
       maxDrawdown = dd;
       maxDrawdownPct = peak > 0 ? (dd / peak) * 100 : 0;
+      drawdownPeak = peak;
     }
   }
 
@@ -151,6 +154,7 @@ export function calculateMetrics(
     pendingBets,
     maxDrawdown,
     maxDrawdownPct,
+    drawdownPeak,
     bestWinStreak,
     worstLossStreak,
     currentStreak,

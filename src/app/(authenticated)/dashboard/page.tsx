@@ -184,7 +184,7 @@ export default function DashboardPage() {
                   <span className="session-dot">·</span>
                   <span className="text-red">-{fmt(metrics.maxDrawdown)}</span>
                   <span className="session-dot">·</span>
-                  <span>from peak</span>
+                  <span>from peak {fmt(metrics.drawdownPeak)}</span>
                 </div>
               </>
             ) : (
