@@ -15,7 +15,7 @@ import {
 
 export default function DashboardPage() {
   const { bets, metrics, globals, loading } = useBetsStore();
-  const [timeframe, setTimeframe] = useState<Timeframe>('daily');
+  const [timeframe, setTimeframe] = useState<Timeframe>('weekly');
 
   // Memoize timeline calculations
   const session = useMemo(() => getSessionStats(bets), [bets]);
@@ -203,7 +203,7 @@ export default function DashboardPage() {
               <i className="fa-solid fa-calendar-days"></i> Performance Timeline
             </h2>
             <div className="timeframe-toggle">
-              {(['daily', 'weekly', 'monthly'] as Timeframe[]).map((tf) => (
+              {(['weekly', 'monthly'] as Timeframe[]).map((tf) => (
                 <button
                   key={tf}
                   className={`timeframe-btn ${timeframe === tf ? 'active' : ''}`}

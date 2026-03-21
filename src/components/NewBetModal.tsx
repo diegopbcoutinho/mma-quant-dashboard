@@ -22,6 +22,7 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
   const [fighter, setFighter] = useState('');
   const [opponent, setOpponent] = useState('');
   const [odds, setOdds] = useState('');
+  const [betDate, setBetDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [stakeInput, setStakeInput] = useState('');
   const [stakeMode, setStakeMode] = useState<StakeMode>('usd');
   const [result, setResult] = useState<'' | 'W' | 'L' | '-'>('-');
@@ -51,6 +52,18 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
       setStakeInput(editBet.stake_usd ? String(editBet.stake_usd) : '');
       setStakeMode('usd');
       setResult((editBet.result as '' | 'W' | 'L' | '-') || '-');
+      // Parse date from bet for edit mode
+      if (editBet.date) {
+        const parts = editBet.date.split('/');
+        if (parts.length === 3) {
+          // MM/DD/YYYY → YYYY-MM-DD
+          setBetDate(`${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`);
+        } else {
+          setBetDate(editBet.date);
+        }
+      } else if (editBet.created_at) {
+        setBetDate(new Date(editBet.created_at).toISOString().slice(0, 10));
+      }
     }
   }, [editBet]);
 
@@ -78,8 +91,15 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
     if (result === 'W') plUsd = stakeNum * (oddsNum - 1);
     else if (result === 'L') plUsd = -stakeNum;
 
+    // Format date as MM/DD/YYYY for display, ISO for created_at
+    const [y, m, d] = betDate.split('-');
+    const displayDate = `${m}/${d}/${y}`;
+    const isoDate = new Date(betDate + 'T12:00:00').toISOString();
+
     if (isEdit && editBet?.id) {
       await updateBet(editBet.id, {
+        date: displayDate,
+        created_at: isoDate,
         event_name: eventName,
         fight_name: fightName,
         fighter,
@@ -91,9 +111,9 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
         pl_usd: plUsd,
       });
     } else {
-      const today = new Date().toLocaleDateString('en-US');
       await addBet(user.id, {
-        date: today,
+        date: displayDate,
+        created_at: isoDate,
         event_name: eventName,
         fight_name: fightName,
         fighter,
@@ -124,15 +144,28 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-field">
-            <label>Event</label>
-            <input
-              className="auth-input"
-              value={eventName}
-              onChange={(e) => setEventName(e.target.value)}
-              placeholder="e.g. UFC 310"
-              required
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12 }}>
+            <div className="modal-field">
+              <label>Event</label>
+              <input
+                className="auth-input"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                placeholder="e.g. UFC 310"
+                required
+              />
+            </div>
+            <div className="modal-field">
+              <label>Date</label>
+              <input
+                className="auth-input"
+                type="date"
+                value={betDate}
+                onChange={(e) => setBetDate(e.target.value)}
+                required
+                style={{ minWidth: 140 }}
+              />
+            </div>
           </div>
 
           <div className="modal-field">

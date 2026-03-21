@@ -17,7 +17,7 @@ import { supabaseProvider } from './supabaseProvider';
 // Provider interface — implement this for each data source
 export interface DataProvider {
   getBets(userId: string): Promise<Bet[]>;
-  createBet(userId: string, bet: Omit<Bet, 'id' | 'user_id' | 'created_at'>): Promise<Bet>;
+  createBet(userId: string, bet: Omit<Bet, 'id' | 'user_id'>): Promise<Bet>;
   updateBet(betId: string, updates: Partial<Bet>): Promise<Bet>;
   deleteBet(betId: string): Promise<void>;
   getSettings(userId: string): Promise<Settings | null>;
@@ -38,7 +38,7 @@ export async function getBets(userId: string): Promise<Bet[]> {
 
 export async function createBet(
   userId: string,
-  bet: Omit<Bet, 'id' | 'user_id' | 'created_at'>
+  bet: Omit<Bet, 'id' | 'user_id'>
 ): Promise<Bet> {
   return activeProvider.createBet(userId, bet);
 }

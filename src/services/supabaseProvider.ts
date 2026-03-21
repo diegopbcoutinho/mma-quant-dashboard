@@ -30,7 +30,7 @@ export const supabaseProvider: DataProvider = {
     return (data || []) as Bet[];
   },
 
-  async createBet(userId: string, bet: Omit<Bet, 'id' | 'user_id' | 'created_at'>): Promise<Bet> {
+  async createBet(userId: string, bet: Omit<Bet, 'id' | 'user_id'>): Promise<Bet> {
     const { data, error } = await supabase
       .from('bets')
       .insert({ ...bet, user_id: userId })

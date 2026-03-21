@@ -37,7 +37,7 @@ interface BetsState {
 
   // Data operations (talk to dataService)
   fetchBets: (userId: string) => Promise<void>;
-  addBet: (userId: string, bet: Omit<Bet, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  addBet: (userId: string, bet: Omit<Bet, 'id' | 'user_id'>) => Promise<void>;
   editBet: (betId: string, updates: Partial<Bet>) => Promise<void>;
   removeBet: (betId: string) => Promise<void>;
   updateBetResult: (betId: string, result: 'W' | 'L' | '-' | '', stakeUsd: number, odds: number) => Promise<void>;
@@ -94,7 +94,7 @@ export const useBetsStore = create<BetsState>((set, get) => ({
       ...bet,
       id: 'temp-' + Date.now(),
       user_id: userId,
-      created_at: new Date().toISOString(),
+      created_at: bet.created_at || new Date().toISOString(),
     };
     set((state) => {
       const newBets = [tempBet, ...state.bets];
