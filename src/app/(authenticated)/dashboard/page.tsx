@@ -175,18 +175,27 @@ export default function DashboardPage() {
             <div className="session-header">
               <i className="fa-solid fa-shield-halved"></i> Risk Profile
             </div>
-            <div className="session-pl" style={{ color: 'var(--text-primary)' }}>
-              {metrics?.maxDrawdownPct !== undefined ? `${metrics.maxDrawdownPct.toFixed(1)}%` : '--'}
-            </div>
-            <div className="session-details">
-              <span>Max Drawdown</span>
-              {metrics?.maxDrawdown !== undefined && (
-                <>
+            {metrics && metrics.maxDrawdown > 0 ? (
+              <>
+                <div className="session-pl text-red">
+                  {metrics.maxDrawdownPct.toFixed(1)}%
+                </div>
+                <div className="session-details">
+                  <span>Max Drawdown</span>
                   <span className="session-dot">·</span>
-                  <span className="text-red">{fmt(metrics.maxDrawdown)}</span>
-                </>
-              )}
-            </div>
+                  <span className="text-red">-{fmt(metrics.maxDrawdown)}</span>
+                  <span className="session-dot">·</span>
+                  <span>from peak</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="session-pl text-gold">Clean</div>
+                <div className="session-details">
+                  <span>No drawdown recorded yet</span>
+                </div>
+              </>
+            )}
           </div>
         </section>
       )}
