@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useBetsStore } from '@/stores/useBetsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -617,9 +617,9 @@ function ResultBadge({
 }) {
   const badgeRef = useRef<HTMLSpanElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isEditing && badgeRef.current) {
       const rect = badgeRef.current.getBoundingClientRect();
       const dropdownH = 160;
@@ -632,6 +632,8 @@ function ResultBadge({
       } else {
         setPos({ top: rect.bottom + 6, left });
       }
+    } else {
+      setPos(null);
     }
   }, [isEditing]);
 
@@ -672,7 +674,7 @@ function ResultBadge({
     fontWeight: 500,
   };
 
-  const dropdown = isEditing
+  const dropdown = isEditing && pos
     ? createPortal(
         <div
           ref={dropdownRef}
