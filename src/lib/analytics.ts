@@ -102,12 +102,17 @@ export function computeAnalytics(bets: Bet[]): Analytics | null {
     else break;
   }
 
-  // 5. Max drawdown
-  let peak = 0, maxDD = 0, maxDDPct = 0;
-  settled.filter(b => b.bankroll_after > 0).forEach(b => {
-    if (b.bankroll_after > peak) peak = b.bankroll_after;
-    const dd = peak - b.bankroll_after;
-    if (dd > maxDD) { maxDD = dd; maxDDPct = (dd / peak) * 100; }
+  // 5. Max drawdown — calculated from running P/L timeline
+  //    (bankroll_after field in DB may be stale/zero, so we compute here)
+  const initialBankroll = 500; // fallback; real value comes from metricsEngine
+  let runningBankroll = initialBankroll;
+  let peak = initialBankroll, maxDD = 0, maxDDPct = 0;
+  settled.forEach(b => {
+    const pl = b.result === 'W' ? b.stake_usd * (b.odds - 1) : -b.stake_usd;
+    runningBankroll += pl;
+    if (runningBankroll > peak) peak = runningBankroll;
+    const dd = peak - runningBankroll;
+    if (dd > maxDD) { maxDD = dd; maxDDPct = peak > 0 ? (dd / peak) * 100 : 0; }
   });
 
   // 6. Avg odds W vs L

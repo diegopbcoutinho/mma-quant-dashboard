@@ -22,15 +22,6 @@ export default function DashboardPage() {
   const streak = useMemo(() => getDailyStreak(bets), [bets]);
   const pnlTimeline = useMemo(() => getPnLTimeline(bets, timeframe), [bets, timeframe]);
 
-  // Debug: check metrics on every render
-  console.log('[Dashboard] metrics:', metrics ? {
-    maxDrawdown: metrics.maxDrawdown,
-    maxDrawdownPct: metrics.maxDrawdownPct,
-    totalBets: metrics.totalBets,
-    currentBankroll: metrics.currentBankroll,
-    timelineEntries: metrics.timeline?.entries?.length,
-  } : 'null');
-
   if (loading) {
     return (
       <main className="page-content">
