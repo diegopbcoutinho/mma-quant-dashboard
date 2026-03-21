@@ -1136,6 +1136,195 @@ tr:hover td {
     100% { background-color: transparent; }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   GLOBAL ANIMATION SYSTEM — Fluid UI transitions
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Core Keyframes ── */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideScaleIn {
+    from { opacity: 0; transform: scale(0.94) translateY(-12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Modal Animations ── */
+.modal-overlay {
+    animation: fadeIn 200ms ease;
+}
+
+.modal-card {
+    animation: slideScaleIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Page Content Entrance ── */
+.page-content {
+    animation: fadeIn 300ms ease;
+}
+
+/* ── KPI Cards — staggered entrance ── */
+.kpi-card {
+    animation: fadeInUp 400ms ease both;
+}
+.kpi-card:nth-child(1) { animation-delay: 0ms; }
+.kpi-card:nth-child(2) { animation-delay: 60ms; }
+.kpi-card:nth-child(3) { animation-delay: 120ms; }
+.kpi-card:nth-child(4) { animation-delay: 180ms; }
+.kpi-card:nth-child(5) { animation-delay: 240ms; }
+.kpi-card:nth-child(6) { animation-delay: 300ms; }
+
+/* ── Session / Streak / Risk Cards ── */
+.session-card {
+    animation: fadeInUp 400ms ease both;
+}
+.session-cards-row .session-card:nth-child(1) { animation-delay: 50ms; }
+.session-cards-row .session-card:nth-child(2) { animation-delay: 120ms; }
+.session-cards-row .session-card:nth-child(3) { animation-delay: 190ms; }
+
+/* ── Chart Section ── */
+.chart-section {
+    animation: fadeInUp 500ms ease 200ms both;
+}
+
+/* ── Glass Panels ── */
+.glass-panel {
+    animation: fadeInScale 400ms ease both;
+}
+
+/* ── Analytics Insight Cards — staggered ── */
+.analytics-insight-card {
+    animation: fadeInUp 400ms ease both;
+}
+.analytics-insights-row .analytics-insight-card:nth-child(1) { animation-delay: 0ms; }
+.analytics-insights-row .analytics-insight-card:nth-child(2) { animation-delay: 70ms; }
+.analytics-insights-row .analytics-insight-card:nth-child(3) { animation-delay: 140ms; }
+.analytics-insights-row .analytics-insight-card:nth-child(4) { animation-delay: 210ms; }
+
+/* ── Table Rows — subtle entrance ── */
+tbody tr {
+    animation: fadeIn 300ms ease both;
+}
+tbody tr:nth-child(1)  { animation-delay: 0ms; }
+tbody tr:nth-child(2)  { animation-delay: 30ms; }
+tbody tr:nth-child(3)  { animation-delay: 60ms; }
+tbody tr:nth-child(4)  { animation-delay: 90ms; }
+tbody tr:nth-child(5)  { animation-delay: 120ms; }
+tbody tr:nth-child(6)  { animation-delay: 150ms; }
+tbody tr:nth-child(7)  { animation-delay: 180ms; }
+tbody tr:nth-child(8)  { animation-delay: 210ms; }
+tbody tr:nth-child(9)  { animation-delay: 240ms; }
+tbody tr:nth-child(10) { animation-delay: 270ms; }
+
+/* ── Auth Pages — card entrance ── */
+.auth-card {
+    animation: slideScaleIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.auth-error {
+    animation: slideDown 250ms ease;
+}
+
+/* ── Search Input — focus glow ── */
+.search-input:focus {
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08);
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+/* ── Simulator ── */
+.sim-summary-card {
+    animation: fadeInUp 400ms ease both;
+}
+.sim-summary-card:nth-child(1) { animation-delay: 0ms; }
+.sim-summary-card:nth-child(2) { animation-delay: 80ms; }
+.sim-summary-card:nth-child(3) { animation-delay: 160ms; }
+.sim-summary-card:nth-child(4) { animation-delay: 240ms; }
+
+.sim-empty-state {
+    animation: fadeIn 500ms ease;
+}
+
+/* ── Tab Content Transition ── */
+.table-responsive {
+    animation: fadeIn 250ms ease;
+}
+
+/* ── Performance Timeline Bars ── */
+.pnl-bar {
+    transition: height 400ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
+}
+
+/* ── Pagination ── */
+.pagination-btn {
+    transition: all 200ms ease;
+}
+.pagination-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* ── Future Summary Bar ── */
+.future-summary-bar {
+    animation: fadeInUp 300ms ease 100ms both;
+}
+
+/* ── Nav Active Indicator smooth transition ── */
+.nav-item {
+    position: relative;
+}
+.nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) scaleY(0);
+    width: 2px;
+    height: 60%;
+    background: var(--accent-gold);
+    transition: transform 200ms ease;
+    border-radius: 1px;
+}
+.nav-item.active::before {
+    transform: translateY(-50%) scaleY(1);
+}
+
+/* ── Tooltip smooth entrance ── */
+[data-tooltip]:hover::after {
+    animation: fadeIn 150ms ease 200ms both;
+}
+
+/* ── Bottom Grid stagger ── */
+.dashboard-bottom-grid > * {
+    animation: fadeInUp 400ms ease both;
+}
+.dashboard-bottom-grid > *:nth-child(1) { animation-delay: 100ms; }
+.dashboard-bottom-grid > *:nth-child(2) { animation-delay: 200ms; }
+
+/* ── Reduce motion for accessibility ── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 .result-badge {
     padding: 4px 8px;
     border-radius: 4px;
