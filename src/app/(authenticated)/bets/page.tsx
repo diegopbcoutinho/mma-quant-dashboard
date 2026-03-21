@@ -585,13 +585,13 @@ function ResultBadge({
       <span
         ref={badgeRef}
         className={`result-badge ${badgeClass}`}
-        style={{ cursor: 'pointer', userSelect: 'none' }}
+        style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
         onClick={onToggle}
         title={isAutoGraded ? 'Auto graded by FightEdge — Click to change' : 'Click to change result'}
       >
         {badgeText}
-        {isAutoGraded && <i className="fa-solid fa-robot" style={{ fontSize: 9, marginLeft: 4, opacity: 0.5 }} title="Auto graded by FightEdge"></i>}
-        {' '}<i className="fa-solid fa-caret-down" style={{ fontSize: 10, marginLeft: 2, opacity: 0.6 }}></i>
+        {isAutoGraded && <i className="fa-solid fa-robot" style={{ fontSize: 9, opacity: 0.5 }} title="Auto graded by FightEdge"></i>}
+        <i className="fa-solid fa-caret-down" style={{ fontSize: 9, opacity: 0.5 }}></i>
       </span>
       {dropdown}
     </>
