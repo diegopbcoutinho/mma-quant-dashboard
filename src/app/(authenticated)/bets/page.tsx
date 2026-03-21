@@ -53,6 +53,38 @@ export default function BetsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const BETS_PER_PAGE = 20;
 
+  // Track rows being animated out (result just changed → leaving current tab)
+  const [exitingRows, setExitingRows] = useState<Set<string>>(new Set());
+  // Track rows that just got graded (flash effect)
+  const [flashRows, setFlashRows] = useState<Set<string>>(new Set());
+
+  // Wrap updateBetResult with animation
+  const handleResultChange = useCallback((betId: string, result: 'W' | 'L' | '-' | '', stakeUsd: number, odds: number) => {
+    // Flash the row
+    setFlashRows(prev => new Set(prev).add(betId));
+
+    // After flash, start exit animation
+    setTimeout(() => {
+      setExitingRows(prev => new Set(prev).add(betId));
+      setFlashRows(prev => { const n = new Set(prev); n.delete(betId); return n; });
+    }, 400);
+
+    // After exit animation, apply the actual update
+    setTimeout(() => {
+      updateBetResult(betId, result, stakeUsd, odds);
+      setExitingRows(prev => { const n = new Set(prev); n.delete(betId); return n; });
+    }, 800);
+  }, [updateBetResult]);
+
+  // Wrap removeBet with animation
+  const handleRemoveBet = useCallback((betId: string) => {
+    setExitingRows(prev => new Set(prev).add(betId));
+    setTimeout(() => {
+      removeBet(betId);
+      setExitingRows(prev => { const n = new Set(prev); n.delete(betId); return n; });
+    }, 400);
+  }, [removeBet]);
+
   const handleGradeResults = useCallback(async () => {
     if (!user || grading) return;
     setGrading(true);
@@ -142,10 +174,10 @@ export default function BetsPage() {
 
   const handleDeleteConfirm = useCallback(() => {
     if (deleteTarget?.id) {
-      removeBet(deleteTarget.id);
+      handleRemoveBet(deleteTarget.id);
     }
     setDeleteTarget(null);
-  }, [deleteTarget, removeBet]);
+  }, [deleteTarget, handleRemoveBet]);
 
   return (
     <main className="page-content">
@@ -284,8 +316,14 @@ export default function BetsPage() {
                       plText = fmt(b.pl_usd);
                     }
 
+                    const isExiting = b.id ? exitingRows.has(b.id) : false;
+                    const isFlashing = b.id ? flashRows.has(b.id) : false;
+
                     return (
-                      <tr key={b.id || i}>
+                      <tr
+                        key={b.id || i}
+                        className={`bet-row ${isExiting ? 'bet-row-exit' : ''} ${isFlashing ? (b.result === 'W' || plClass === 'text-gold' ? 'bet-row-flash-win' : 'bet-row-flash-loss') : ''}`}
+                      >
                         <td>{b.date || '--'}</td>
                         <td
                           style={{
@@ -307,7 +345,7 @@ export default function BetsPage() {
                             isEditing={editingBetId === b.id}
                             onToggle={() => setEditingBetId(editingBetId === b.id ? null : (b.id ?? null))}
                             onSelect={(result) => {
-                              if (b.id) updateBetResult(b.id, result, b.stake_usd, b.odds);
+                              if (b.id) handleResultChange(b.id, result, b.stake_usd, b.odds);
                               setEditingBetId(null);
                             }}
                           />

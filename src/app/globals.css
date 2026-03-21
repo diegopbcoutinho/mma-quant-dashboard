@@ -1105,6 +1105,37 @@ tr:hover td {
     font-weight: 600;
 }
 
+/* ── Bet Row Animations ── */
+.bet-row {
+    transition: opacity 400ms ease, transform 400ms ease, background-color 500ms ease;
+}
+
+.bet-row-exit {
+    opacity: 0;
+    transform: translateX(-20px);
+    pointer-events: none;
+}
+
+.bet-row-flash-win {
+    animation: flashWin 400ms ease;
+}
+
+.bet-row-flash-loss {
+    animation: flashLoss 400ms ease;
+}
+
+@keyframes flashWin {
+    0%   { background-color: transparent; }
+    30%  { background-color: rgba(212, 175, 55, 0.15); }
+    100% { background-color: transparent; }
+}
+
+@keyframes flashLoss {
+    0%   { background-color: transparent; }
+    30%  { background-color: rgba(230, 57, 70, 0.15); }
+    100% { background-color: transparent; }
+}
+
 .result-badge {
     padding: 4px 8px;
     border-radius: 4px;
