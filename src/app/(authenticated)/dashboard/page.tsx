@@ -303,45 +303,126 @@ export default function DashboardPage() {
   );
 }
 
-// ── PnL Bar Chart Component ─────────────────────────────────────────────────
+// ── PnL Bar Chart Component (Redesigned) ────────────────────────────────────
 
 function PnLBarChart({ data }: { data: PnLEntry[] }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const maxAbs = Math.max(...data.map((d) => Math.abs(d.profit)), 1);
 
-  return (
-    <div className="pnl-chart">
-      {data.map((entry, i) => {
-        const pct = (Math.abs(entry.profit) / maxAbs) * 100;
-        const isPositive = entry.profit >= 0;
+  // Calculate cumulative P/L for the line overlay
+  const cumulative = data.reduce<number[]>((acc, d) => {
+    const prev = acc.length > 0 ? acc[acc.length - 1] : 0;
+    acc.push(prev + d.profit);
+    return acc;
+  }, []);
+  const cumulMax = Math.max(...cumulative.map(Math.abs), 1);
 
-        return (
-          <div key={i} className="pnl-bar-container" title={`${entry.label}: ${entry.profit >= 0 ? '+' : ''}$${entry.profit.toFixed(2)} (${entry.bets} bets, ${entry.winRate.toFixed(0)}% WR)`}>
-            <div className="pnl-bar-wrapper">
-              {/* Upper half (profit) */}
-              <div className="pnl-bar-upper">
-                {isPositive && (
-                  <div
-                    className="pnl-bar pnl-bar-positive"
-                    style={{ height: `${pct}%` }}
-                  />
-                )}
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Summary row */}
+      <div style={{
+        display: 'flex', gap: 24, marginBottom: 16, padding: '0 4px',
+        fontSize: 12, color: 'var(--text-muted)',
+      }}>
+        <span>
+          Total: <strong style={{ color: data.reduce((s, d) => s + d.profit, 0) >= 0 ? 'var(--accent-gold)' : 'var(--accent-red)' }}>
+            {data.reduce((s, d) => s + d.profit, 0) >= 0 ? '+' : ''}${data.reduce((s, d) => s + d.profit, 0).toFixed(2)}
+          </strong>
+        </span>
+        <span>
+          Periods: <strong style={{ color: 'var(--text-primary)' }}>{data.length}</strong>
+        </span>
+        <span>
+          Best: <strong className="text-gold">
+            +${Math.max(...data.map(d => d.profit), 0).toFixed(2)}
+          </strong>
+        </span>
+        <span>
+          Worst: <strong className="text-red">
+            ${Math.min(...data.map(d => d.profit), 0).toFixed(2)}
+          </strong>
+        </span>
+      </div>
+
+      <div className="pnl-chart">
+        {data.map((entry, i) => {
+          const pct = (Math.abs(entry.profit) / maxAbs) * 100;
+          const isPositive = entry.profit >= 0;
+          const isHovered = hoveredIdx === i;
+
+          return (
+            <div
+              key={i}
+              className={`pnl-bar-container ${isHovered ? 'pnl-hovered' : ''}`}
+              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseLeave={() => setHoveredIdx(null)}
+            >
+              {/* Floating tooltip */}
+              {isHovered && (
+                <div className="pnl-tooltip">
+                  <div className="pnl-tooltip-label">{entry.label}</div>
+                  <div className={`pnl-tooltip-value ${isPositive ? 'text-gold' : 'text-red'}`}>
+                    {isPositive ? '+' : ''}${entry.profit.toFixed(2)}
+                  </div>
+                  <div className="pnl-tooltip-meta">
+                    {entry.bets} bet{entry.bets !== 1 ? 's' : ''} · {entry.winRate.toFixed(0)}% WR
+                  </div>
+                </div>
+              )}
+
+              <div className="pnl-bar-wrapper">
+                <div className="pnl-bar-upper">
+                  {isPositive && (
+                    <div
+                      className="pnl-bar pnl-bar-positive"
+                      style={{ height: `${Math.max(pct, 4)}%` }}
+                    >
+                      {isHovered && pct > 20 && (
+                        <span className="pnl-bar-value">+${entry.profit.toFixed(0)}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="pnl-zero-line" />
+                <div className="pnl-bar-lower">
+                  {!isPositive && (
+                    <div
+                      className="pnl-bar pnl-bar-negative"
+                      style={{ height: `${Math.max(pct, 4)}%` }}
+                    >
+                      {isHovered && pct > 20 && (
+                        <span className="pnl-bar-value">${entry.profit.toFixed(0)}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-              {/* Zero line */}
-              <div className="pnl-zero-line" />
-              {/* Lower half (loss) */}
-              <div className="pnl-bar-lower">
-                {!isPositive && (
-                  <div
-                    className="pnl-bar pnl-bar-negative"
-                    style={{ height: `${pct}%` }}
-                  />
-                )}
-              </div>
+              <span className="pnl-bar-label">{entry.label}</span>
             </div>
-            <span className="pnl-bar-label">{entry.label}</span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+
+      {/* Cumulative line overlay */}
+      {data.length > 1 && (
+        <svg
+          className="pnl-cumulative-line"
+          viewBox={`0 0 ${data.length * 100} 200`}
+          preserveAspectRatio="none"
+        >
+          <polyline
+            fill="none"
+            stroke="rgba(212,175,55,0.4)"
+            strokeWidth="2"
+            strokeDasharray="4,4"
+            points={cumulative.map((v, i) => {
+              const x = i * 100 + 50;
+              const y = 100 - (v / cumulMax) * 90;
+              return `${x},${y}`;
+            }).join(' ')}
+          />
+        </svg>
+      )}
     </div>
   );
 }

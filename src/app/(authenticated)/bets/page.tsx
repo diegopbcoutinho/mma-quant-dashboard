@@ -50,6 +50,8 @@ export default function BetsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Bet | null>(null);
   const [grading, setGrading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const BETS_PER_PAGE = 20;
 
   const handleGradeResults = useCallback(async () => {
     if (!user || grading) return;
@@ -90,6 +92,8 @@ export default function BetsPage() {
   }, [bets, currentTab]);
 
   const filtered = useMemo(() => {
+    // Reset to page 1 when data changes
+    setCurrentPage(1);
     if (!search) return tabFiltered;
     const s = search.toLowerCase();
     return tabFiltered.filter(
@@ -98,6 +102,13 @@ export default function BetsPage() {
         b.event_name.toLowerCase().includes(s)
     );
   }, [tabFiltered, search]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / BETS_PER_PAGE));
+  const paginatedBets = filtered.slice(
+    (currentPage - 1) * BETS_PER_PAGE,
+    currentPage * BETS_PER_PAGE
+  );
 
   const futureTotal = useMemo(() => {
     if (currentTab !== 'future') return null;
@@ -258,7 +269,7 @@ export default function BetsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((b, i) => {
+                  paginatedBets.map((b, i) => {
                     let plClass = '';
                     let plText = b.pl_usd ? fmt(b.pl_usd) : '--';
 
@@ -374,6 +385,68 @@ export default function BetsPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {filtered.length > BETS_PER_PAGE && (
+          <div className="pagination-bar">
+            <span className="pagination-info">
+              Showing {(currentPage - 1) * BETS_PER_PAGE + 1}–{Math.min(currentPage * BETS_PER_PAGE, filtered.length)} of {filtered.length}
+            </span>
+            <div className="pagination-controls">
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                <i className="fa-solid fa-angles-left"></i>
+              </button>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <i className="fa-solid fa-chevron-left"></i>
+              </button>
+
+              {Array.from({ length: Math.min(5, totalPages) }, (_, idx) => {
+                let page: number;
+                if (totalPages <= 5) {
+                  page = idx + 1;
+                } else if (currentPage <= 3) {
+                  page = idx + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  page = totalPages - 4 + idx;
+                } else {
+                  page = currentPage - 2 + idx;
+                }
+                return (
+                  <button
+                    key={page}
+                    className={`pagination-btn pagination-num ${currentPage === page ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <i className="fa-solid fa-chevron-right"></i>
+              </button>
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                <i className="fa-solid fa-angles-right"></i>
+              </button>
+            </div>
           </div>
         )}
       </section>
