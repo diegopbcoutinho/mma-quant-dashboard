@@ -1,12 +1,26 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useBetsStore } from '@/stores/useBetsStore';
 import { fmt } from '@/lib/helpers';
 import BankrollChart from '@/components/BankrollChart';
 import { KPISkeleton, ChartSkeleton } from '@/components/LoadingSkeleton';
+import {
+  getPnLTimeline,
+  getSessionStats,
+  getDailyStreak,
+  type Timeframe,
+  type PnLEntry,
+} from '@/services/timelineEngine';
 
 export default function DashboardPage() {
   const { bets, metrics, globals, loading } = useBetsStore();
+  const [timeframe, setTimeframe] = useState<Timeframe>('daily');
+
+  // Memoize timeline calculations
+  const session = useMemo(() => getSessionStats(bets), [bets]);
+  const streak = useMemo(() => getDailyStreak(bets), [bets]);
+  const pnlTimeline = useMemo(() => getPnLTimeline(bets, timeframe), [bets, timeframe]);
 
   if (loading) {
     return (
@@ -28,7 +42,6 @@ export default function DashboardPage() {
   const losses = metrics?.losses ?? 0;
   const totalBets = metrics?.totalBets ?? 0;
 
-  // Unit value for profit-in-units display
   const unitValue = globals.bancaInicial * globals.unitSize;
   const profitInUnits = unitValue > 0 ? totalPL / unitValue : 0;
 
@@ -37,6 +50,7 @@ export default function DashboardPage() {
   const recent = allFinished.slice(0, Math.max(upcoming.length, 1));
 
   const hasNoBets = bets.length === 0;
+  const hasNoSettled = allFinished.length === 0;
 
   return (
     <main className="page-content">
@@ -94,6 +108,77 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* Session + Streak Cards */}
+      {!hasNoSettled && (
+        <section className="session-grid">
+          {/* Today's Session */}
+          <div className="glass-panel session-card">
+            <div className="session-header">
+              <i className="fa-solid fa-bolt"></i> Today&apos;s Session
+            </div>
+            {session.todayBets === 0 ? (
+              <div className="session-empty">No bets graded today</div>
+            ) : (
+              <>
+                <div className={`session-pl ${session.todayPL >= 0 ? 'text-gold' : 'text-red'}`}>
+                  {session.todayPL > 0 ? '+' : ''}{fmt(session.todayPL)}
+                </div>
+                <div className="session-details">
+                  <span>{session.todayBets} bet{session.todayBets > 1 ? 's' : ''}</span>
+                  <span className="session-dot">·</span>
+                  <span>{session.todayWinRate.toFixed(0)}% win rate</span>
+                  <span className="session-dot">·</span>
+                  <span>{session.todayWins}W {session.todayLosses}L</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Streak */}
+          <div className="glass-panel session-card">
+            <div className="session-header">
+              <i className="fa-solid fa-fire"></i> Daily Streak
+            </div>
+            {streak.type === null ? (
+              <div className="session-empty">No streak data</div>
+            ) : (
+              <>
+                <div className={`session-pl ${streak.type === 'win' ? 'text-gold' : 'text-red'}`}>
+                  {streak.count} day{streak.count > 1 ? 's' : ''}
+                </div>
+                <div className="session-details">
+                  <span>
+                    {streak.type === 'win'
+                      ? `${streak.count} consecutive profitable day${streak.count > 1 ? 's' : ''}`
+                      : `${streak.count} consecutive losing day${streak.count > 1 ? 's' : ''}`
+                    }
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Quick Stats */}
+          <div className="glass-panel session-card">
+            <div className="session-header">
+              <i className="fa-solid fa-shield-halved"></i> Risk Profile
+            </div>
+            <div className="session-pl" style={{ color: 'var(--text-primary)' }}>
+              {metrics?.maxDrawdownPct !== undefined ? `${metrics.maxDrawdownPct.toFixed(1)}%` : '--'}
+            </div>
+            <div className="session-details">
+              <span>Max Drawdown</span>
+              {metrics?.maxDrawdown !== undefined && (
+                <>
+                  <span className="session-dot">·</span>
+                  <span className="text-red">{fmt(metrics.maxDrawdown)}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Bankroll Chart */}
       {hasNoBets ? (
         <section className="glass-panel" style={{ padding: 40, textAlign: 'center' }}>
@@ -108,6 +193,36 @@ export default function DashboardPage() {
           timeline={metrics?.timeline ?? { entries: [], currentBankroll: globals.bancaInicial, totalProfit: 0, totalRisked: 0 }}
           initialBankroll={globals.bancaInicial}
         />
+      )}
+
+      {/* Performance Timeline */}
+      {!hasNoSettled && (
+        <section className="glass-panel" style={{ padding: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="fa-solid fa-calendar-days"></i> Performance Timeline
+            </h2>
+            <div className="timeframe-toggle">
+              {(['daily', 'weekly', 'monthly'] as Timeframe[]).map((tf) => (
+                <button
+                  key={tf}
+                  className={`timeframe-btn ${timeframe === tf ? 'active' : ''}`}
+                  onClick={() => setTimeframe(tf)}
+                >
+                  {tf.charAt(0).toUpperCase() + tf.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {pnlTimeline.length === 0 ? (
+            <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-muted)' }}>
+              Start tracking your bets to see your performance over time.
+            </div>
+          ) : (
+            <PnLBarChart data={pnlTimeline} />
+          )}
+        </section>
       )}
 
       {/* Global Controls */}
@@ -178,5 +293,48 @@ export default function DashboardPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+// ── PnL Bar Chart Component ─────────────────────────────────────────────────
+
+function PnLBarChart({ data }: { data: PnLEntry[] }) {
+  const maxAbs = Math.max(...data.map((d) => Math.abs(d.profit)), 1);
+
+  return (
+    <div className="pnl-chart">
+      {data.map((entry, i) => {
+        const pct = (Math.abs(entry.profit) / maxAbs) * 100;
+        const isPositive = entry.profit >= 0;
+
+        return (
+          <div key={i} className="pnl-bar-container" title={`${entry.label}: ${entry.profit >= 0 ? '+' : ''}$${entry.profit.toFixed(2)} (${entry.bets} bets, ${entry.winRate.toFixed(0)}% WR)`}>
+            <div className="pnl-bar-wrapper">
+              {/* Upper half (profit) */}
+              <div className="pnl-bar-upper">
+                {isPositive && (
+                  <div
+                    className="pnl-bar pnl-bar-positive"
+                    style={{ height: `${pct}%` }}
+                  />
+                )}
+              </div>
+              {/* Zero line */}
+              <div className="pnl-zero-line" />
+              {/* Lower half (loss) */}
+              <div className="pnl-bar-lower">
+                {!isPositive && (
+                  <div
+                    className="pnl-bar pnl-bar-negative"
+                    style={{ height: `${pct}%` }}
+                  />
+                )}
+              </div>
+            </div>
+            <span className="pnl-bar-label">{entry.label}</span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
