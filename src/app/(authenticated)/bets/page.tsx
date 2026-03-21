@@ -597,16 +597,14 @@ export default function BetsPage() {
             position: 'fixed',
             top: dropdownPos.top,
             left: dropdownPos.left,
-            background: 'rgba(15, 15, 18, 0.98)',
+            background: 'rgb(15, 15, 18)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10,
             padding: 6,
             zIndex: 9999,
             minWidth: 150,
             maxWidth: 'calc(100vw - 32px)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(12px)',
-            animation: 'fadeInScale 150ms ease',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
           }}
         >
           <button
