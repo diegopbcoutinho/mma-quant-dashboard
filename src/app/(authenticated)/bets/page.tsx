@@ -92,8 +92,6 @@ export default function BetsPage() {
   }, [bets, currentTab]);
 
   const filtered = useMemo(() => {
-    // Reset to page 1 when data changes
-    setCurrentPage(1);
     if (!search) return tabFiltered;
     const s = search.toLowerCase();
     return tabFiltered.filter(
@@ -102,6 +100,11 @@ export default function BetsPage() {
         b.event_name.toLowerCase().includes(s)
     );
   }, [tabFiltered, search]);
+
+  // Reset to page 1 when tab or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentTab, search]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / BETS_PER_PAGE));

@@ -14,7 +14,7 @@ import {
 } from '@/services/timelineEngine';
 
 export default function DashboardPage() {
-  const { bets, metrics, globals, loading } = useBetsStore();
+  const { bets, metrics, globals, settings, loading } = useBetsStore();
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly');
 
   // Memoize timeline calculations
@@ -42,7 +42,6 @@ export default function DashboardPage() {
   const losses = metrics?.losses ?? 0;
   const totalBets = metrics?.totalBets ?? 0;
 
-  const { settings } = useBetsStore();
   const isCompound = settings?.stake_strategy === 'compound';
   // Flat: unit based on initial bankroll | Compound: unit based on current bankroll
   const unitValue = isCompound
