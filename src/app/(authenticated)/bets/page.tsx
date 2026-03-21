@@ -56,13 +56,19 @@ export default function BetsPage() {
   const [dropdownBetId, setDropdownBetId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // Map of betId → badge DOM element (for positioning)
-  const badgeRefs = useRef<Map<string, HTMLSpanElement>>(new Map());
 
-  const openDropdown = useCallback((betId: string) => {
-    const el = badgeRefs.current.get(betId);
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
+  const closeDropdown = useCallback(() => {
+    setDropdownBetId(null);
+    setDropdownPos(null);
+  }, []);
+
+  // Toggle dropdown — receives the actual clicked element for positioning
+  const toggleDropdown = useCallback((betId: string, clickedEl: HTMLElement) => {
+    if (dropdownBetId === betId) {
+      closeDropdown();
+      return;
+    }
+    const rect = clickedEl.getBoundingClientRect();
     const dropdownH = 160;
     const spaceBelow = window.innerHeight - rect.bottom;
     const left = Math.min(rect.left, window.innerWidth - 170);
@@ -73,33 +79,18 @@ export default function BetsPage() {
       setDropdownPos({ top: rect.top - dropdownH - 6, left });
     }
     setDropdownBetId(betId);
-  }, []);
-
-  const closeDropdown = useCallback(() => {
-    setDropdownBetId(null);
-    setDropdownPos(null);
-  }, []);
-
-  const toggleDropdown = useCallback((betId: string) => {
-    if (dropdownBetId === betId) {
-      closeDropdown();
-    } else {
-      openDropdown(betId);
-    }
-  }, [dropdownBetId, closeDropdown, openDropdown]);
+  }, [dropdownBetId, closeDropdown]);
 
   // Close dropdown on outside click / scroll
   useEffect(() => {
     if (!dropdownBetId) return;
     const handleOutside = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
-      const badgeEl = dropdownBetId ? badgeRefs.current.get(dropdownBetId) : null;
-      if (
-        dropdownRef.current && !dropdownRef.current.contains(target) &&
-        (!badgeEl || !badgeEl.contains(target))
-      ) {
-        closeDropdown();
-      }
+      // Don't close if clicking inside the dropdown itself
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+      // Don't close if clicking a result-badge (toggle handles that)
+      if (target instanceof HTMLElement && target.closest('.result-badge')) return;
+      closeDropdown();
     };
     const handleScroll = () => closeDropdown();
     document.addEventListener('mousedown', handleOutside);
@@ -252,14 +243,6 @@ export default function BetsPage() {
     setDeleteTarget(null);
   }, [deleteTarget, handleRemoveBet]);
 
-  // Helper: register badge ref
-  const setBadgeRef = useCallback((betId: string, el: HTMLSpanElement | null) => {
-    if (el) {
-      badgeRefs.current.set(betId, el);
-    } else {
-      badgeRefs.current.delete(betId);
-    }
-  }, []);
 
   // Share card handler
   const handleShare = useCallback((b: Bet) => {
@@ -404,9 +387,8 @@ export default function BetsPage() {
                     <div className="bmc-fight">{b.fight_name || '--'}</div>
                     <BadgeOnly
                       bet={b}
-                      refCallback={setBadgeRef}
                       isActive={dropdownBetId === b.id}
-                      onToggle={() => b.id && toggleDropdown(b.id)}
+                      onToggle={(el) => b.id && toggleDropdown(b.id, el)}
                     />
                   </div>
                   <div className="bmc-event">{b.event_name || '--'}</div>
@@ -507,9 +489,8 @@ export default function BetsPage() {
                         <td>
                           <BadgeOnly
                             bet={b}
-                            refCallback={setBadgeRef}
                             isActive={dropdownBetId === b.id}
-                            onToggle={() => b.id && toggleDropdown(b.id)}
+                            onToggle={(el) => b.id && toggleDropdown(b.id, el)}
                           />
                         </td>
                         {isFinishedTab && (
@@ -679,17 +660,15 @@ export default function BetsPage() {
   );
 }
 
-/** Badge-only component — renders the colored badge, no dropdown logic */
+/** Badge-only component — passes the clicked element back for positioning */
 function BadgeOnly({
   bet,
-  refCallback,
   isActive,
   onToggle,
 }: {
   bet: Bet;
-  refCallback: (betId: string, el: HTMLSpanElement | null) => void;
   isActive: boolean;
-  onToggle: () => void;
+  onToggle: (el: HTMLElement) => void;
 }) {
   const isAutoGraded = !!bet.graded_at;
 
@@ -701,10 +680,9 @@ function BadgeOnly({
 
   return (
     <span
-      ref={(el) => { if (bet.id) refCallback(bet.id, el); }}
       className={`result-badge ${badgeClass} ${isActive ? 'result-badge-active' : ''}`}
       style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
-      onClick={onToggle}
+      onClick={(e) => onToggle(e.currentTarget)}
       title={isAutoGraded ? 'Auto graded by FightEdge — Click to change' : 'Click to change result'}
     >
       {badgeText}
