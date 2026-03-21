@@ -617,7 +617,7 @@ function ResultBadge({
 }) {
   const badgeRef = useRef<HTMLSpanElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (isEditing && badgeRef.current) {
@@ -632,6 +632,8 @@ function ResultBadge({
       } else {
         setPos({ top: rect.bottom + 6, left });
       }
+    } else {
+      setPos(null);
     }
   }, [isEditing]);
 
@@ -672,7 +674,7 @@ function ResultBadge({
     fontWeight: 500,
   };
 
-  const dropdown = isEditing
+  const dropdown = isEditing && pos
     ? createPortal(
         <div
           ref={dropdownRef}
