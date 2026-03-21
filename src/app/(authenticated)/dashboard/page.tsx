@@ -111,24 +111,24 @@ export default function DashboardPage() {
       {/* Session + Streak Cards */}
       {!hasNoSettled && (
         <section className="session-grid">
-          {/* Today's Session */}
+          {/* This Week's Session */}
           <div className="glass-panel session-card">
             <div className="session-header">
-              <i className="fa-solid fa-bolt"></i> Today&apos;s Session
+              <i className="fa-solid fa-bolt"></i> This Week
             </div>
-            {session.todayBets === 0 ? (
-              <div className="session-empty">No bets graded today</div>
+            {session.weekBets === 0 ? (
+              <div className="session-empty">No bets graded this week</div>
             ) : (
               <>
-                <div className={`session-pl ${session.todayPL >= 0 ? 'text-gold' : 'text-red'}`}>
-                  {session.todayPL > 0 ? '+' : ''}{fmt(session.todayPL)}
+                <div className={`session-pl ${session.weekPL >= 0 ? 'text-gold' : 'text-red'}`}>
+                  {session.weekPL > 0 ? '+' : ''}{fmt(session.weekPL)}
                 </div>
                 <div className="session-details">
-                  <span>{session.todayBets} bet{session.todayBets > 1 ? 's' : ''}</span>
+                  <span>{session.weekBets} bet{session.weekBets > 1 ? 's' : ''}</span>
                   <span className="session-dot">·</span>
-                  <span>{session.todayWinRate.toFixed(0)}% win rate</span>
+                  <span>{session.weekWinRate.toFixed(0)}% win rate</span>
                   <span className="session-dot">·</span>
-                  <span>{session.todayWins}W {session.todayLosses}L</span>
+                  <span>{session.weekWins}W {session.weekLosses}L</span>
                 </div>
               </>
             )}

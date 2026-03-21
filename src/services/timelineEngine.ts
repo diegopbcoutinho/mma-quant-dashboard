@@ -21,11 +21,11 @@ export interface PnLEntry {
 }
 
 export interface SessionStats {
-  todayPL: number;
-  todayBets: number;
-  todayWins: number;
-  todayLosses: number;
-  todayWinRate: number;
+  weekPL: number;
+  weekBets: number;
+  weekWins: number;
+  weekLosses: number;
+  weekWinRate: number;
 }
 
 export interface StreakInfo {
@@ -143,14 +143,16 @@ export function getPnLTimeline(bets: Bet[], timeframe: Timeframe): PnLEntry[] {
 }
 
 /**
- * Get today's session stats from settled bets.
+ * Get current week's session stats from settled bets.
+ * Uses ISO week (Mon-Sun) to align with weekly fight cards.
  */
 export function getSessionStats(bets: Bet[]): SessionStats {
-  const today = dayKey(new Date());
+  const now = new Date();
+  const currentWeek = weekKey(now);
   const settled = bets.filter((b) => {
     if (b.result !== 'W' && b.result !== 'L') return false;
     const d = parseBetDate(b);
-    return dayKey(d) === today;
+    return weekKey(d) === currentWeek;
   });
 
   const wins = settled.filter((b) => b.result === 'W').length;
@@ -159,11 +161,11 @@ export function getSessionStats(bets: Bet[]): SessionStats {
   const profit = settled.reduce((sum, b) => sum + b.pl_usd, 0);
 
   return {
-    todayPL: profit,
-    todayBets: total,
-    todayWins: wins,
-    todayLosses: losses,
-    todayWinRate: total > 0 ? (wins / total) * 100 : 0,
+    weekPL: profit,
+    weekBets: total,
+    weekWins: wins,
+    weekLosses: losses,
+    weekWinRate: total > 0 ? (wins / total) * 100 : 0,
   };
 }
 
