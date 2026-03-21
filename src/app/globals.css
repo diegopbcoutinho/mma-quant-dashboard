@@ -261,11 +261,13 @@ body {
     background: rgba(0, 0, 0, 0.6);
     z-index: 150;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 200ms ease;
 }
 
 .sidebar-overlay.active {
     opacity: 1;
+    pointer-events: auto;
 }
 
 /* ── Main wrapper ── */
@@ -302,9 +304,12 @@ body {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 18px;
+    font-size: 22px;
     cursor: pointer;
-    padding: 4px;
+    padding: 10px 12px;
+    margin: -10px -12px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .top-bar-title {
