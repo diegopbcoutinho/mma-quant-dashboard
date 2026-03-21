@@ -622,22 +622,40 @@ function ResultBadge({
   useEffect(() => {
     if (isEditing && badgeRef.current) {
       const rect = badgeRef.current.getBoundingClientRect();
-      setPos({ top: rect.top - 6, left: rect.left });
+      const isMobile = window.innerWidth <= 768;
+      const dropdownH = 160; // approximate dropdown height
+
+      if (isMobile) {
+        // On mobile, position dropdown below the badge if there's room, else above
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow > dropdownH + 20) {
+          setPos({ top: rect.bottom + 6, left: Math.min(rect.left, window.innerWidth - 170) });
+        } else {
+          setPos({ top: rect.top - dropdownH - 6, left: Math.min(rect.left, window.innerWidth - 170) });
+        }
+      } else {
+        setPos({ top: rect.top - 6, left: rect.left });
+      }
     }
   }, [isEditing]);
 
   useEffect(() => {
     if (!isEditing) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
       if (
-        badgeRef.current && !badgeRef.current.contains(e.target as Node) &&
-        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+        badgeRef.current && !badgeRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
       ) {
         onToggle();
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
   }, [isEditing, onToggle]);
 
   // Access graded_at from the full bet object if available
@@ -666,15 +684,17 @@ function ResultBadge({
             position: 'fixed',
             top: pos.top,
             left: pos.left,
-            transform: 'translateY(-100%)',
+            transform: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'none' : 'translateY(-100%)',
             background: 'rgba(15, 15, 18, 0.98)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10,
             padding: 6,
             zIndex: 9999,
             minWidth: 150,
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+            maxWidth: 'calc(100vw - 32px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
             backdropFilter: 'blur(12px)',
+            animation: 'fadeInScale 150ms ease',
           }}
         >
           <button

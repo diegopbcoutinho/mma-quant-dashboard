@@ -1325,8 +1325,9 @@ tbody tr:nth-child(10) { animation-delay: 270ms; }
 .bets-desktop-table { display: block; }
 
 @media (max-width: 768px) {
-    .bets-mobile-cards { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+    .bets-mobile-cards { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; overflow: visible; }
     .bets-desktop-table { display: none !important; }
+    .fights-section { overflow: visible; }
 }
 
 .bet-mobile-card {
@@ -1334,6 +1335,7 @@ tbody tr:nth-child(10) { animation-delay: 270ms; }
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 14px 16px;
+    overflow: visible;
     transition: opacity 400ms ease, transform 400ms ease, background-color 500ms ease;
 }
 
