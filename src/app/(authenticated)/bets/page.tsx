@@ -276,7 +276,90 @@ export default function BetsPage() {
             </button>
           </div>
         ) : (
-          <div className="table-responsive">
+          <>
+          {/* ── Mobile Card Layout ── */}
+          <div className="bets-mobile-cards">
+            {filtered.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 20 }}>No bets found for this tab.</p>
+            ) : paginatedBets.map((b, i) => {
+              const isExiting = b.id ? exitingRows.has(b.id) : false;
+              const flashResult = b.id ? flashRows.get(b.id) : undefined;
+              let plClass = '';
+              let plText = b.pl_usd ? fmt(b.pl_usd) : '--';
+              if (b.result === 'W') { plClass = 'text-gold'; plText = '+' + fmt(b.pl_usd); }
+              else if (b.result === 'L') { plClass = 'text-red'; plText = fmt(b.pl_usd); }
+
+              return (
+                <div
+                  key={b.id || i}
+                  className={`bet-mobile-card bet-row ${isExiting ? 'bet-row-exit' : ''} ${flashResult === 'W' ? 'bet-row-flash-win' : flashResult === 'L' ? 'bet-row-flash-loss' : ''}`}
+                >
+                  <div className="bmc-top">
+                    <div className="bmc-fight">{b.fight_name || '--'}</div>
+                    <ResultBadge
+                      bet={b}
+                      isEditing={editingBetId === b.id}
+                      onToggle={() => setEditingBetId(editingBetId === b.id ? null : (b.id ?? null))}
+                      onSelect={(result) => {
+                        if (b.id) handleResultChange(b.id, result, b.stake_usd, b.odds);
+                        setEditingBetId(null);
+                      }}
+                    />
+                  </div>
+                  <div className="bmc-event">{b.event_name || '--'}</div>
+                  <div className="bmc-stats">
+                    <div className="bmc-stat">
+                      <span className="bmc-stat-label">Odds</span>
+                      <span className="bmc-stat-value">{b.odds > 0 ? b.odds.toFixed(3) : '--'}</span>
+                    </div>
+                    <div className="bmc-stat">
+                      <span className="bmc-stat-label">Stake</span>
+                      <span className="bmc-stat-value">{fmt(b.stake_usd)}</span>
+                    </div>
+                    {isFinishedTab && (
+                      <div className="bmc-stat">
+                        <span className="bmc-stat-label">P/L</span>
+                        <span className={`bmc-stat-value ${plClass}`}>{plText}</span>
+                      </div>
+                    )}
+                    <div className="bmc-stat">
+                      <span className="bmc-stat-label">Date</span>
+                      <span className="bmc-stat-value" style={{ fontSize: 12 }}>{b.date || '--'}</span>
+                    </div>
+                  </div>
+                  <div className="bmc-actions">
+                    {(b.result === 'W' || b.result === 'L') && (
+                      <button
+                        onClick={() => {
+                          const cardData: BetCardData = {
+                            event: b.event_name || '', fight: b.fight_name || '',
+                            fighter: b.fighter || '', opponent: b.opponent || '',
+                            odds: b.odds, stake: b.stake_usd,
+                            result: b.result as 'W' | 'L', pl: b.pl_usd, date: b.date || '',
+                          };
+                          const img = generateBetCard(cardData);
+                          downloadShareCard(img, `FightEdge_${(b.fight_name || 'bet').replace(/[^a-zA-Z0-9]/g, '_')}.png`);
+                        }}
+                        className="bmc-action-btn"
+                        title="Share"
+                      >
+                        <i className="fa-solid fa-share-from-square"></i>
+                      </button>
+                    )}
+                    <button onClick={() => setEditingBet(b)} className="bmc-action-btn" title="Edit">
+                      <i className="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button onClick={() => setDeleteTarget(b)} className="bmc-action-btn bmc-action-delete" title="Delete">
+                      <i className="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Desktop Table Layout ── */}
+          <div className="bets-desktop-table table-responsive">
             <table>
               <thead>
                 <tr>
@@ -429,6 +512,7 @@ export default function BetsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Pagination */}
