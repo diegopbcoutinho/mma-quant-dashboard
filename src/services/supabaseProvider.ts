@@ -27,7 +27,18 @@ export const supabaseProvider: DataProvider = {
       .order('created_at', { ascending: false });
 
     if (error) throw new Error(error.message);
-    return (data || []) as Bet[];
+
+    // Supabase returns NUMERIC columns as strings — coerce to numbers
+    return (data || []).map((row: Record<string, unknown>) => ({
+      ...row,
+      odds: Number(row.odds) || 0,
+      stake_usd: Number(row.stake_usd) || 0,
+      stake_brl: Number(row.stake_brl) || 0,
+      pl_usd: Number(row.pl_usd) || 0,
+      bankroll_before: Number(row.bankroll_before) || 0,
+      bankroll_after: Number(row.bankroll_after) || 0,
+      roi: Number(row.roi) || 0,
+    })) as Bet[];
   },
 
   async createBet(userId: string, bet: Omit<Bet, 'id' | 'user_id'>): Promise<Bet> {
