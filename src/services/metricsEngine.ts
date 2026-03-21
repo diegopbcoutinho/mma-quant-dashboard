@@ -85,6 +85,12 @@ export function calculateMetrics(
   let maxDrawdown = 0;
   let maxDrawdownPct = 0;
 
+  console.log('[MetricsEngine] timeline entries:', timeline.entries.length, 'initialBankroll:', initialBankroll);
+  if (timeline.entries.length > 0) {
+    console.log('[MetricsEngine] first entry:', timeline.entries[0]);
+    console.log('[MetricsEngine] last entry:', timeline.entries[timeline.entries.length - 1]);
+  }
+
   for (const entry of timeline.entries) {
     if (entry.bankrollAfter > peak) {
       peak = entry.bankrollAfter;
@@ -95,6 +101,8 @@ export function calculateMetrics(
       maxDrawdownPct = peak > 0 ? (dd / peak) * 100 : 0;
     }
   }
+
+  console.log('[MetricsEngine] maxDrawdown:', maxDrawdown, 'peak:', peak, 'pct:', maxDrawdownPct);
 
   // --- Streaks (chronological order) ---
   let bestWinStreak = 0;
