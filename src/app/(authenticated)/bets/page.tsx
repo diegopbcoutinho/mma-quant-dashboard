@@ -73,14 +73,20 @@ export default function BetsPage() {
   }, [user, grading, gradePendingBets]);
 
   const tabFiltered = useMemo(() => {
-    return bets.filter((b) => {
-      const isFinished = b.result === 'W' || b.result === 'L';
-      const isFuture = b.result === '-' || b.result === '';
+    return bets
+      .filter((b) => {
+        const isFinished = b.result === 'W' || b.result === 'L';
+        const isFuture = b.result === '-' || b.result === '';
 
-      if (currentTab === 'finished') return isFinished;
-      if (currentTab === 'future') return isFuture;
-      return true;
-    });
+        if (currentTab === 'finished') return isFinished;
+        if (currentTab === 'future') return isFuture;
+        return true;
+      })
+      .sort((a, b) => {
+        const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return db - da; // newest first in table
+      });
   }, [bets, currentTab]);
 
   const filtered = useMemo(() => {

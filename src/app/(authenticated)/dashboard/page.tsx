@@ -46,7 +46,14 @@ export default function DashboardPage() {
   const profitInUnits = unitValue > 0 ? totalPL / unitValue : 0;
 
   const upcoming = bets.filter((b) => b.result === '-');
-  const allFinished = bets.filter((b) => b.result === 'W' || b.result === 'L');
+  // Sort finished bets by date descending (newest first) for Recent Bets display
+  const allFinished = bets
+    .filter((b) => b.result === 'W' || b.result === 'L')
+    .sort((a, b) => {
+      const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return db - da;
+    });
   const recent = allFinished.slice(0, Math.max(upcoming.length, 1));
 
   const hasNoBets = bets.length === 0;

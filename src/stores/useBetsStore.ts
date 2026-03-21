@@ -97,7 +97,11 @@ export const useBetsStore = create<BetsState>((set, get) => ({
       created_at: bet.created_at || new Date().toISOString(),
     };
     set((state) => {
-      const newBets = [tempBet, ...state.bets];
+      const newBets = [tempBet, ...state.bets].sort((a, b) => {
+        const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return db - da; // newest first
+      });
       const { analytics, metrics } = recalculate(newBets, state.settings);
       return { bets: newBets, analytics, metrics };
     });
@@ -107,7 +111,11 @@ export const useBetsStore = create<BetsState>((set, get) => ({
       set((state) => {
         const newBets = state.bets.map((b) =>
           b.id === tempBet.id ? savedBet : b
-        );
+        ).sort((a, b) => {
+          const da = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return db - da;
+        });
         const { analytics, metrics } = recalculate(newBets, state.settings);
         return { bets: newBets, analytics, metrics, connectionError: false };
       });
