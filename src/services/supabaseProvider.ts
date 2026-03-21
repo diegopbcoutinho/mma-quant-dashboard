@@ -70,7 +70,9 @@ export const supabaseProvider: DataProvider = {
       .single();
 
     if (error && error.code !== 'PGRST116') throw new Error(error.message);
-    return (data as Settings) || null;
+    if (!data) return null;
+    // Ensure stake_strategy has a default value
+    return { stake_strategy: 'flat', ...data } as Settings;
   },
 
   async updateSettings(userId: string, settings: Partial<Settings>): Promise<Settings> {

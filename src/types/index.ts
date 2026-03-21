@@ -23,6 +23,8 @@ export interface Bet {
   graded_at?: string;   // Set when auto-graded by grading engine
 }
 
+export type StakeStrategy = 'flat' | 'compound';
+
 export interface Settings {
   id?: string;
   user_id?: string;
@@ -30,6 +32,7 @@ export interface Settings {
   unit_size: number;
   target_units: number;
   currency: string;
+  stake_strategy: StakeStrategy;  // 'flat' = fixed units, 'compound' = units scale with bankroll
 }
 
 export interface Globals {

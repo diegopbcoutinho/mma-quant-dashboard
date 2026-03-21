@@ -216,6 +216,7 @@ export const useBetsStore = create<BetsState>((set, get) => ({
           unit_size: 0.01,
           target_units: 1.5,
           currency: 'USD',
+          stake_strategy: 'flat',
         });
       }
 

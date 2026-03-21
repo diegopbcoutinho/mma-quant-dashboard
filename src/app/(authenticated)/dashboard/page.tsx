@@ -42,8 +42,13 @@ export default function DashboardPage() {
   const losses = metrics?.losses ?? 0;
   const totalBets = metrics?.totalBets ?? 0;
 
-  const unitValue = globals.bancaInicial * globals.unitSize;
-  const profitInUnits = unitValue > 0 ? totalPL / unitValue : 0;
+  const { settings } = useBetsStore();
+  const isCompound = settings?.stake_strategy === 'compound';
+  // Flat: unit based on initial bankroll | Compound: unit based on current bankroll
+  const unitValue = isCompound
+    ? currentBankroll * globals.unitSize
+    : globals.bancaInicial * globals.unitSize;
+  const profitInUnits = unitValue > 0 ? totalPL / (globals.bancaInicial * globals.unitSize) : 0;
 
   const upcoming = bets.filter((b) => b.result === '-');
   // Sort finished bets by date descending (newest first) for Recent Bets display
@@ -243,7 +248,7 @@ export default function DashboardPage() {
           <span className="value">{(globals.unitSize * 100).toFixed(1)}%</span>
         </div>
         <div className="control-group">
-          <span className="label">1 Unit</span>
+          <span className="label">1 Unit {isCompound ? '(compound)' : '(flat)'}</span>
           <span className="value">${unitValue.toFixed(2)}</span>
         </div>
       </section>

@@ -14,7 +14,7 @@ interface BetModalProps {
 
 export default function BetModal({ onClose, editBet }: BetModalProps) {
   const { user } = useAuthStore();
-  const { addBet, editBet: updateBet, settings, globals } = useBetsStore();
+  const { addBet, editBet: updateBet, settings, globals, metrics } = useBetsStore();
   const isEdit = !!editBet;
 
   const [eventName, setEventName] = useState('');
@@ -28,12 +28,20 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
   const [result, setResult] = useState<'' | 'W' | 'L' | '-'>('-');
   const [submitting, setSubmitting] = useState(false);
 
-  // Calculate 1 unit value in USD
+  // Calculate 1 unit value in USD based on staking strategy
   const unitValue = useMemo(() => {
-    const bankroll = settings?.initial_bankroll ?? globals.bancaInicial;
+    const initialBankroll = settings?.initial_bankroll ?? globals.bancaInicial;
     const unitPct = settings?.unit_size ?? globals.unitSize;
-    return bankroll * unitPct;
-  }, [settings, globals]);
+    const isCompound = settings?.stake_strategy === 'compound';
+
+    if (isCompound) {
+      // Compound: unit scales with current bankroll
+      const currentBankroll = metrics?.currentBankroll ?? initialBankroll;
+      return currentBankroll * unitPct;
+    }
+    // Flat: unit stays fixed based on initial bankroll
+    return initialBankroll * unitPct;
+  }, [settings, globals, metrics]);
 
   // Resolve actual USD stake from input
   const resolvedStakeUsd = useMemo(() => {
