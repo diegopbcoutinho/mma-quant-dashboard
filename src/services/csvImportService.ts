@@ -31,6 +31,84 @@ export interface CSVParseResult {
 }
 
 const REQUIRED_HEADERS = ['event_name', 'fighter_a', 'fighter_b', 'selection', 'odds', 'stake'];
+
+/**
+ * Parse date from many common formats → YYYY-MM-DD
+ * Supports:
+ *   2026-03-20       (ISO)
+ *   03/20/2026       (MM/DD/YYYY)
+ *   20/03/2026       (DD/MM/YYYY)
+ *   03-20-2026       (MM-DD-YYYY)
+ *   20-03-2026       (DD-MM-YYYY)
+ *   20.03.2026       (DD.MM.YYYY)
+ *   Mar 20, 2026     (Month name)
+ *   20 Mar 2026
+ *   2026/03/20
+ */
+function parseFlexibleDate(raw: string): string {
+  const s = raw.trim();
+  if (!s) return '';
+
+  // Try ISO first: YYYY-MM-DD or YYYY/MM/DD
+  const isoMatch = s.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return validateAndFormat(+y, +m, +d);
+  }
+
+  // Try named months: "Mar 20, 2026" or "20 Mar 2026" etc
+  const months: Record<string, number> = {
+    jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3,
+    apr: 4, april: 4, may: 5, jun: 6, june: 6,
+    jul: 7, july: 7, aug: 8, august: 8, sep: 9, september: 9,
+    oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12,
+  };
+
+  // "Mar 20, 2026" or "March 20 2026"
+  const namedA = s.match(/^([a-zA-Z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (namedA) {
+    const m = months[namedA[1].toLowerCase()];
+    if (m) return validateAndFormat(+namedA[3], m, +namedA[2]);
+  }
+
+  // "20 Mar 2026" or "20 March 2026"
+  const namedB = s.match(/^(\d{1,2})\s+([a-zA-Z]+),?\s+(\d{4})$/);
+  if (namedB) {
+    const m = months[namedB[2].toLowerCase()];
+    if (m) return validateAndFormat(+namedB[3], m, +namedB[1]);
+  }
+
+  // Numeric with separators: DD/MM/YYYY or MM/DD/YYYY or DD-MM-YYYY or DD.MM.YYYY
+  const numMatch = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (numMatch) {
+    const a = +numMatch[1];
+    const b = +numMatch[2];
+    const y = +numMatch[3];
+
+    // If first number > 12, it must be day (DD/MM/YYYY)
+    if (a > 12 && b <= 12) return validateAndFormat(y, b, a);
+    // If second number > 12, it must be day (MM/DD/YYYY)
+    if (b > 12 && a <= 12) return validateAndFormat(y, a, b);
+    // Both ≤ 12: ambiguous — default to DD/MM/YYYY (more common worldwide)
+    return validateAndFormat(y, b, a);
+  }
+
+  // Fallback: let JS try to parse it
+  const fallback = new Date(s);
+  if (!isNaN(fallback.getTime())) {
+    const y = fallback.getFullYear();
+    const m = fallback.getMonth() + 1;
+    const d = fallback.getDate();
+    if (y > 2000 && y < 2100) return validateAndFormat(y, m, d);
+  }
+
+  return '';
+}
+
+function validateAndFormat(y: number, m: number, d: number): string {
+  if (y < 2000 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return '';
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
 const VALID_RESULTS = ['', 'W', 'L', 'C', 'pending', 'win', 'loss', 'cancelled'];
 
 const CSV_TEMPLATE_HEADERS = 'event_name,fighter_a,fighter_b,selection,odds,stake,date,result';
@@ -161,14 +239,12 @@ export function parseCSVText(text: string): CSVParseResult {
       }
     }
 
-    // Date validation (optional)
+    // Date validation (optional) — accepts many formats
     let date = '';
     if (dateStr) {
-      const d = new Date(dateStr + 'T12:00:00');
-      if (isNaN(d.getTime())) {
-        errors.push('Invalid date format (use YYYY-MM-DD)');
-      } else {
-        date = dateStr;
+      date = parseFlexibleDate(dateStr);
+      if (!date) {
+        errors.push('Invalid date format');
       }
     }
 
