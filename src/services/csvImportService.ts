@@ -144,10 +144,11 @@ export function parseCSVText(text: string): CSVParseResult {
     if (!fighter_b) errors.push('Missing fighter_b');
     if (!selection) errors.push('Missing selection');
 
-    const odds = parseFloat(oddsStr);
+    // Support both comma (1,85) and dot (1.85) as decimal separator
+    const odds = parseFloat(oddsStr.replace(',', '.'));
     if (isNaN(odds) || odds <= 1) errors.push('Odds must be a number > 1');
 
-    const stake = parseFloat(stakeStr);
+    const stake = parseFloat(stakeStr.replace(',', '.'));
     if (isNaN(stake) || stake <= 0) errors.push('Stake must be a positive number');
 
     // Selection must match fighter_a or fighter_b
