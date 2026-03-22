@@ -12,6 +12,7 @@ function pickedFighter(fight: string): string | null {
 }
 
 export function computeAnalytics(bets: Bet[]): Analytics | null {
+  // W/L only — cancelled bets excluded from analytics
   const settled = [...bets]
     .filter(b => b.result === 'W' || b.result === 'L')
     .reverse(); // chronological order

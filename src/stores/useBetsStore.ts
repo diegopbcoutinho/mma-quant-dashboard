@@ -40,7 +40,7 @@ interface BetsState {
   addBet: (userId: string, bet: Omit<Bet, 'id' | 'user_id'>) => Promise<void>;
   editBet: (betId: string, updates: Partial<Bet>) => Promise<void>;
   removeBet: (betId: string) => Promise<void>;
-  updateBetResult: (betId: string, result: 'W' | 'L' | '-' | '', stakeUsd: number, odds: number) => Promise<void>;
+  updateBetResult: (betId: string, result: 'W' | 'L' | 'C' | '-' | '', stakeUsd: number, odds: number) => Promise<void>;
   gradePendingBets: (userId: string) => Promise<GradingSummary>;
   fetchSettings: (userId: string) => Promise<void>;
   saveSettings: (userId: string, settings: Partial<Settings>) => Promise<void>;
@@ -168,6 +168,7 @@ export const useBetsStore = create<BetsState>((set, get) => ({
     let plUsd = 0;
     if (result === 'W') plUsd = stakeUsd * (odds - 1);
     else if (result === 'L') plUsd = -stakeUsd;
+    // C (cancelled) = pl stays 0
 
     set((state) => {
       const newBets = state.bets.map((b) =>

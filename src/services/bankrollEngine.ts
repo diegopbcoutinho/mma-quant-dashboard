@@ -36,8 +36,9 @@ export function calculateBankrollTimeline(
   initialBankroll: number
 ): BankrollTimeline {
   // Sort settled bets chronologically (oldest first)
+  // Include C (cancelled) with pl=0 so timeline stays complete
   const settled = [...bets]
-    .filter((b) => b.result === 'W' || b.result === 'L')
+    .filter((b) => b.result === 'W' || b.result === 'L' || b.result === 'C')
     .sort((a, b) => {
       const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
       const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -51,11 +52,13 @@ export function calculateBankrollTimeline(
   const entries: BankrollEntry[] = settled.map((bet) => {
     const bankrollBefore = runningBankroll;
 
-    // P/L calculation: W = stake * (odds - 1), L = -stake
+    // P/L calculation: W = stake * (odds - 1), L = -stake, C = 0
     const plUsd =
       bet.result === 'W'
         ? bet.stake_usd * (bet.odds - 1)
-        : -bet.stake_usd;
+        : bet.result === 'C'
+          ? 0
+          : -bet.stake_usd;
 
     runningBankroll += plUsd;
     cumulativeProfit += plUsd;

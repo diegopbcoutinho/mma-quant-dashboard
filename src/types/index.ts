@@ -14,7 +14,7 @@ export interface Bet {
   odds: number;
   stake_usd: number;
   stake_brl: number;
-  result: 'W' | 'L' | '-' | '';
+  result: 'W' | 'L' | 'C' | '-' | '';  // C = Cancelled (no money lost)
   pl_usd: number;
   bankroll_before: number;
   bankroll_after: number;

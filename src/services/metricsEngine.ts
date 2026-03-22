@@ -59,7 +59,7 @@ export function calculateMetrics(
   // Build bankroll timeline using the engine
   const timeline = calculateBankrollTimeline(bets, initialBankroll);
 
-  // Filter settled bets in chronological order
+  // Filter settled bets in chronological order (W/L only for stats, C excluded)
   const settled = [...bets]
     .filter((b) => b.result === 'W' || b.result === 'L')
     .sort((a, b) => {
@@ -70,8 +70,9 @@ export function calculateMetrics(
 
   const wins = settled.filter((b) => b.result === 'W').length;
   const losses = settled.filter((b) => b.result === 'L').length;
-  const totalBets = settled.length;
-  const pendingBets = bets.filter((b) => b.result === '-').length;
+  const cancelled = bets.filter((b) => b.result === 'C').length;
+  const totalBets = settled.length; // W+L only (cancelled excluded from win rate)
+  const pendingBets = bets.filter((b) => b.result === '-').length + cancelled;
 
   // ROI = totalProfit / totalRisked (NOT initial bankroll)
   const roi = timeline.totalRisked > 0

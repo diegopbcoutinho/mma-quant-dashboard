@@ -25,7 +25,7 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
   const [betDate, setBetDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [stakeInput, setStakeInput] = useState('');
   const [stakeMode, setStakeMode] = useState<StakeMode>('usd');
-  const [result, setResult] = useState<'' | 'W' | 'L' | '-'>('-');
+  const [result, setResult] = useState<'' | 'W' | 'L' | 'C' | '-'>('-');
   const [submitting, setSubmitting] = useState(false);
 
   // Calculate 1 unit value in USD based on staking strategy
@@ -59,7 +59,7 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
       setOdds(editBet.odds ? String(editBet.odds) : '');
       setStakeInput(editBet.stake_usd ? String(editBet.stake_usd) : '');
       setStakeMode('usd');
-      setResult((editBet.result as '' | 'W' | 'L' | '-') || '-');
+      setResult((editBet.result as '' | 'W' | 'L' | 'C' | '-') || '-');
       // Parse date from bet for edit mode
       if (editBet.date) {
         const parts = editBet.date.split('/');
@@ -269,11 +269,12 @@ export default function BetModal({ onClose, editBet }: BetModalProps) {
             <select
               className="auth-input"
               value={result}
-              onChange={(e) => setResult(e.target.value as '' | 'W' | 'L' | '-')}
+              onChange={(e) => setResult(e.target.value as '' | 'W' | 'L' | 'C' | '-')}
             >
               <option value="-">Pending</option>
               <option value="W">Win</option>
               <option value="L">Loss</option>
+              <option value="C">Cancelled</option>
               <option value="">To Do</option>
             </select>
           </div>

@@ -1478,6 +1478,11 @@ tr:hover td {
     color: var(--text-muted);
 }
 
+.badge-cancelled {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+}
+
 /* Active result badge highlight */
 .result-badge-active {
     outline: 2px solid rgba(212, 175, 55, 0.4);
@@ -1491,9 +1496,11 @@ tr:hover td {
 .result-dropdown-win  { color: var(--accent-gold) !important; }
 .result-dropdown-loss { color: var(--accent-red) !important; }
 .result-dropdown-pending { color: var(--text-muted) !important; }
+.result-dropdown-cancelled { color: #94a3b8 !important; }
 .result-dropdown-win:hover  { background: rgba(212, 175, 55, 0.12) !important; }
 .result-dropdown-loss:hover { background: rgba(230, 57, 70, 0.12) !important; }
 .result-dropdown-pending:hover { background: rgba(255, 255, 255, 0.05) !important; }
+.result-dropdown-cancelled:hover { background: rgba(148, 163, 184, 0.1) !important; }
 
 /* Desktop table action icon buttons */
 .action-btns {

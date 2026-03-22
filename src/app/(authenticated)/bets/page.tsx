@@ -10,6 +10,7 @@ import BetModal from '@/components/NewBetModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { generateBetCard, downloadShareCard, type BetCardData } from '@/services/shareCardGenerator';
+import ImportCSVModal from '@/components/ImportCSVModal';
 import type { Bet } from '@/types';
 
 type Tab = 'finished' | 'future';
@@ -51,13 +52,14 @@ export default function BetsPage() {
   const [grading, setGrading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showImport, setShowImport] = useState(false);
   const BETS_PER_PAGE = 20;
 
   // Track rows being animated out
   const [exitingRows, setExitingRows] = useState<Set<string>>(new Set());
   const [flashRows, setFlashRows] = useState<Map<string, 'W' | 'L'>>(new Map());
 
-  const handleResultChange = useCallback((betId: string, result: 'W' | 'L' | '-' | '', stakeUsd: number, odds: number) => {
+  const handleResultChange = useCallback((betId: string, result: 'W' | 'L' | 'C' | '-' | '', stakeUsd: number, odds: number) => {
     if (result === 'W' || result === 'L') {
       setFlashRows(prev => new Map(prev).set(betId, result));
     }
@@ -100,7 +102,7 @@ export default function BetsPage() {
   const tabFiltered = useMemo(() => {
     return bets
       .filter((b) => {
-        const isFinished = b.result === 'W' || b.result === 'L';
+        const isFinished = b.result === 'W' || b.result === 'L' || b.result === 'C';
         const isFuture = b.result === '-' || b.result === '';
         if (currentTab === 'finished') return isFinished;
         if (currentTab === 'future') return isFuture;
@@ -152,6 +154,12 @@ export default function BetsPage() {
     { id: 'future', label: 'Upcoming Bets' },
   ];
 
+  const handleImportComplete = useCallback((imported: number, skipped: number) => {
+    let msg = `${imported} bet${imported !== 1 ? 's' : ''} imported successfully.`;
+    if (skipped > 0) msg += ` ${skipped} row${skipped !== 1 ? 's' : ''} skipped.`;
+    setToast({ message: msg, type: imported > 0 ? 'success' : 'info' });
+  }, []);
+
   const handleDeleteConfirm = useCallback(() => {
     if (deleteTarget?.id) handleRemoveBet(deleteTarget.id);
     setDeleteTarget(null);
@@ -178,6 +186,10 @@ export default function BetsPage() {
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <i className={`fa-solid fa-rotate ${grading ? 'fa-spin' : ''}`}></i>
             {grading ? 'Checking...' : 'Check Results'}
+          </button>
+          <button className="btn-sync" onClick={() => setShowImport(true)} title="Import CSV"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="fa-solid fa-file-import"></i> Import
           </button>
           <button className="btn-sync" onClick={() => exportBetsCSV(bets)} title="Export CSV"
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -243,6 +255,7 @@ export default function BetsPage() {
               let plText = b.pl_usd ? fmt(b.pl_usd) : '--';
               if (b.result === 'W') { plClass = 'text-gold'; plText = '+' + fmt(b.pl_usd); }
               else if (b.result === 'L') { plClass = 'text-red'; plText = fmt(b.pl_usd); }
+              else if (b.result === 'C') { plClass = 'text-muted'; plText = '$0.00'; }
 
               return (
                 <div key={b.id || i}
@@ -380,6 +393,7 @@ export default function BetsPage() {
 
       {showModal && <BetModal onClose={() => setShowModal(false)} />}
       {editingBet && <BetModal editBet={editingBet} onClose={() => setEditingBet(null)} />}
+      {showImport && <ImportCSVModal onClose={() => setShowImport(false)} onComplete={handleImportComplete} />}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {deleteTarget && (
         <ConfirmModal title="Delete Bet"
@@ -397,7 +411,7 @@ function ResultBadge({
   bet: { result: string; id?: string; graded_at?: string };
   isEditing: boolean;
   onToggle: () => void;
-  onSelect: (result: 'W' | 'L' | '-' | '') => void;
+  onSelect: (result: 'W' | 'L' | 'C' | '-' | '') => void;
 }) {
   const badgeRef = useRef<HTMLSpanElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -409,7 +423,7 @@ function ResultBadge({
       if (!badgeRef.current.offsetParent) return;
 
       const rect = badgeRef.current.getBoundingClientRect();
-      const dropdownH = 160;
+      const dropdownH = 200;
       const spaceBelow = window.innerHeight - rect.bottom;
       const left = Math.min(rect.left, window.innerWidth - 170);
 
@@ -448,6 +462,7 @@ function ResultBadge({
   let badgeText = 'PENDING';
   if (bet.result === 'W') { badgeClass = 'badge-win'; badgeText = 'WIN'; }
   else if (bet.result === 'L') { badgeClass = 'badge-loss'; badgeText = 'LOSS'; }
+  else if (bet.result === 'C') { badgeClass = 'badge-cancelled'; badgeText = 'CANCELLED'; }
   else if (bet.result === '') { badgeText = 'TO DO'; }
 
   const btnStyle: React.CSSProperties = {
@@ -474,6 +489,10 @@ function ResultBadge({
           <button onClick={() => onSelect('L')}
             className="result-dropdown-btn result-dropdown-loss" style={btnStyle}>
             <i className="fa-solid fa-xmark"></i> LOSS
+          </button>
+          <button onClick={() => onSelect('C')}
+            className="result-dropdown-btn result-dropdown-cancelled" style={btnStyle}>
+            <i className="fa-solid fa-ban"></i> CANCELLED
           </button>
           <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }}></div>
           <button onClick={() => onSelect('-')}
