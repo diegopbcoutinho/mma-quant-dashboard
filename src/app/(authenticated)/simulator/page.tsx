@@ -56,6 +56,7 @@ export default function SimulatorPage() {
         stakePercent,
         numberOfBets,
         simulations: 1000,
+        stakeStrategy: settings?.stake_strategy ?? 'flat',
       });
       setResult(sim);
       setHasRun(true);
@@ -289,6 +290,11 @@ export default function SimulatorPage() {
             <span className="sim-toggle-slider"></span>
             <span className="sim-toggle-text">Use my real performance data</span>
           </label>
+
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="fa-solid fa-layer-group" style={{ fontSize: 10 }}></i>
+            {settings?.stake_strategy === 'compound' ? 'Compound staking' : 'Flat staking'}
+          </span>
 
           <button className="sim-run-btn" onClick={handleRun} disabled={running}>
             {running ? (

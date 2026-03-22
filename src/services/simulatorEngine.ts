@@ -26,6 +26,7 @@ export interface MonteCarloInput {
   stakePercent: number;  // 0-100 percentage of bankroll per bet
   numberOfBets: number;  // 10-1000
   simulations?: number;  // default 1000
+  stakeStrategy?: 'flat' | 'compound'; // flat = fixed unit, compound = scales with bankroll
 }
 
 export interface PercentilePoint {
@@ -77,19 +78,21 @@ function runSinglePath(
   avgOdds: number,
   stakeFraction: number,
   numberOfBets: number,
+  isCompound: boolean,
 ): number[] {
   const path = new Float64Array(numberOfBets + 1);
   path[0] = initialBankroll;
   let bankroll = initialBankroll;
+  const flatStake = initialBankroll * stakeFraction; // fixed for flat mode
 
   for (let i = 0; i < numberOfBets; i++) {
     if (bankroll <= 0) {
-      // Busted — fill rest with 0
       for (let j = i + 1; j <= numberOfBets; j++) path[j] = 0;
       return Array.from(path);
     }
 
-    const stake = bankroll * stakeFraction;
+    // Compound: stake scales with current bankroll. Flat: fixed unit from initial.
+    const stake = isCompound ? bankroll * stakeFraction : Math.min(flatStake, bankroll);
     if (Math.random() < winFraction) {
       bankroll += stake * (avgOdds - 1);
     } else {
@@ -145,17 +148,19 @@ export function runMonteCarloSimulation(input: MonteCarloInput): MonteCarloResul
     stakePercent,
     numberOfBets,
     simulations = 1000,
+    stakeStrategy = 'compound',
   } = input;
 
   const winFraction = winRate / 100;
   const stakeFraction = stakePercent / 100;
+  const isCompound = stakeStrategy === 'compound';
   const numSims = Math.min(simulations, 1000); // cap at 1000
 
   // Run all simulations
   const allPaths: number[][] = [];
   for (let s = 0; s < numSims; s++) {
     allPaths.push(
-      runSinglePath(initialBankroll, winFraction, avgOdds, stakeFraction, numberOfBets)
+      runSinglePath(initialBankroll, winFraction, avgOdds, stakeFraction, numberOfBets, isCompound)
     );
   }
 
