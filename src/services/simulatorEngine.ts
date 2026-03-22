@@ -1,176 +1,258 @@
 /**
- * Simulator Engine — Forward-looking bankroll projection tool
+ * Monte Carlo Simulator Engine — Probabilistic bankroll projection
  *
- * Architecture: Pure function that runs Monte Carlo-style bankroll simulations.
+ * Architecture: Pure functions that run N independent random simulations.
+ * Each simulation generates random bet outcomes based on win probability.
+ * Results are aggregated into percentile bands for fan chart visualization.
+ *
  * This module NEVER touches real data — it's a projection-only tool.
  *
- * Three scenarios:
- *   1. Expected — random distribution using winRate probability
- *   2. Best case — wins clustered early (builds bankroll before losses)
- *   3. Worst case — losses clustered early (drains bankroll before wins)
- *
- * Formulas:
+ * Core formulas:
  *   stake = currentBankroll * stakePercent
  *   if win  → profit = stake * (avgOdds - 1)
  *   if loss → profit = -stake
- *   bankroll updated after each simulated bet
+ *   bankroll updated dynamically after each simulated bet
  *
- * Seeded PRNG ensures reproducibility for the "expected" scenario.
+ * Output:
+ *   - Percentile bands (p10, p25, median, p75, p90) at each bet number
+ *   - Sample paths for visual depth
+ *   - Aggregate statistics: probability of profit, risk of ruin, avg drawdown
  */
 
-export interface SimulationInput {
+export interface MonteCarloInput {
   initialBankroll: number;
   winRate: number;       // 0-100 percentage
   avgOdds: number;       // decimal odds (e.g. 1.85)
   stakePercent: number;  // 0-100 percentage of bankroll per bet
   numberOfBets: number;  // 10-1000
+  simulations?: number;  // default 1000
 }
 
-export interface SimulationPoint {
+export interface PercentilePoint {
   betNumber: number;
-  bankroll: number;
+  p10: number;
+  p25: number;
+  median: number;
+  p75: number;
+  p90: number;
 }
 
-export interface SimulationResult {
-  expected: SimulationPoint[];
-  bestCase: SimulationPoint[];
-  worstCase: SimulationPoint[];
+export interface SamplePath {
+  points: number[]; // bankroll at each bet (index = betNumber)
+}
+
+export interface MonteCarloResult {
+  /** Percentile bands at each bet number (for fan chart) */
+  percentiles: PercentilePoint[];
+
+  /** 10 random sample paths for visual depth */
+  samplePaths: SamplePath[];
+
+  /** Aggregate statistics */
   summary: {
-    finalExpected: number;
-    finalBest: number;
-    finalWorst: number;
-    maxDrawdownExpected: number;
-    maxDrawdownExpectedPct: number;
-    expectedROI: number;
+    medianFinal: number;
+    p90Final: number;      // upside (90th percentile)
+    p10Final: number;      // downside (10th percentile)
+    probProfit: number;    // % of simulations ending above initial
+    riskOfRuin: number;    // % of simulations where bankroll hit 0
+    avgMaxDrawdown: number;     // average max drawdown in USD
+    avgMaxDrawdownPct: number;  // average max drawdown as % of peak
+    medianROI: number;
     expectedProfit: number;
+    simulationsRun: number;
   };
 }
 
-/**
- * Simple seeded PRNG (Mulberry32) for deterministic "expected" scenario.
- * Ensures same inputs always produce same chart — no flickering on re-render.
- */
-function seededRandom(seed: number): () => number {
-  let t = seed;
-  return () => {
-    t = (t + 0x6D2B79F5) | 0;
-    let x = Math.imul(t ^ (t >>> 15), 1 | t);
-    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// ── Legacy exports for backward compatibility ──
+export type SimulationInput = MonteCarloInput;
+export type SimulationResult = MonteCarloResult;
 
 /**
- * Run a single scenario simulation.
- * @param outcomes - pre-determined array of booleans (true = win, false = loss)
+ * Run a single simulation path.
+ * Returns the bankroll at each step (array of length numberOfBets + 1).
  */
-function runScenario(
-  outcomes: boolean[],
+function runSinglePath(
   initialBankroll: number,
+  winFraction: number,
   avgOdds: number,
-  stakePercent: number
-): SimulationPoint[] {
-  const points: SimulationPoint[] = [{ betNumber: 0, bankroll: initialBankroll }];
+  stakeFraction: number,
+  numberOfBets: number,
+): number[] {
+  const path = new Float64Array(numberOfBets + 1);
+  path[0] = initialBankroll;
   let bankroll = initialBankroll;
-  const stakeFraction = stakePercent / 100;
 
-  for (let i = 0; i < outcomes.length; i++) {
-    // Bankroll can't go below 0
+  for (let i = 0; i < numberOfBets; i++) {
     if (bankroll <= 0) {
-      points.push({ betNumber: i + 1, bankroll: 0 });
-      continue;
+      // Busted — fill rest with 0
+      for (let j = i + 1; j <= numberOfBets; j++) path[j] = 0;
+      return Array.from(path);
     }
 
     const stake = bankroll * stakeFraction;
-    if (outcomes[i]) {
-      // Win: profit = stake * (odds - 1)
+    if (Math.random() < winFraction) {
       bankroll += stake * (avgOdds - 1);
     } else {
-      // Loss: lose the stake
       bankroll -= stake;
     }
-
-    // Prevent negative bankroll (busted)
     bankroll = Math.max(0, bankroll);
-    points.push({ betNumber: i + 1, bankroll: Math.round(bankroll * 100) / 100 });
+    path[i + 1] = bankroll;
   }
 
-  return points;
+  return Array.from(path);
 }
 
 /**
- * Calculate max drawdown from a scenario's timeline.
+ * Calculate max drawdown for a single path.
  */
-function calcMaxDrawdown(points: SimulationPoint[]): { amount: number; pct: number } {
-  let peak = points[0]?.bankroll ?? 0;
+function calcPathDrawdown(path: number[]): { amount: number; pct: number } {
+  let peak = path[0];
   let maxDd = 0;
   let maxDdPct = 0;
 
-  for (const p of points) {
-    if (p.bankroll > peak) peak = p.bankroll;
-    const dd = peak - p.bankroll;
+  for (let i = 1; i < path.length; i++) {
+    if (path[i] > peak) peak = path[i];
+    const dd = peak - path[i];
     if (dd > maxDd) {
       maxDd = dd;
       maxDdPct = peak > 0 ? (dd / peak) * 100 : 0;
     }
   }
 
-  return { amount: Math.round(maxDd * 100) / 100, pct: Math.round(maxDdPct * 100) / 100 };
+  return { amount: maxDd, pct: maxDdPct };
 }
 
 /**
- * Main simulation function.
- * Runs 3 scenarios and returns complete results for charting.
+ * Get percentile value from a sorted array.
  */
-export function runSimulation(input: SimulationInput): SimulationResult {
-  const { initialBankroll, winRate, avgOdds, stakePercent, numberOfBets } = input;
-  const winFraction = winRate / 100;
-  const totalWins = Math.round(numberOfBets * winFraction);
-  const totalLosses = numberOfBets - totalWins;
+function percentile(sorted: number[], p: number): number {
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
 
-  // --- Expected Path (seeded random distribution) ---
-  const rng = seededRandom(42);
-  const expectedOutcomes: boolean[] = [];
-  for (let i = 0; i < numberOfBets; i++) {
-    expectedOutcomes.push(rng() < winFraction);
+/**
+ * Main Monte Carlo simulation.
+ * Runs N independent simulations and aggregates results.
+ */
+export function runMonteCarloSimulation(input: MonteCarloInput): MonteCarloResult {
+  const {
+    initialBankroll,
+    winRate,
+    avgOdds,
+    stakePercent,
+    numberOfBets,
+    simulations = 1000,
+  } = input;
+
+  const winFraction = winRate / 100;
+  const stakeFraction = stakePercent / 100;
+  const numSims = Math.min(simulations, 1000); // cap at 1000
+
+  // Run all simulations
+  const allPaths: number[][] = [];
+  for (let s = 0; s < numSims; s++) {
+    allPaths.push(
+      runSinglePath(initialBankroll, winFraction, avgOdds, stakeFraction, numberOfBets)
+    );
   }
 
-  // --- Best Case (wins first, then losses) ---
-  const bestOutcomes: boolean[] = [
-    ...Array(totalWins).fill(true),
-    ...Array(totalLosses).fill(false),
-  ];
+  // ── Calculate percentile bands at each bet number ──
+  const percentiles: PercentilePoint[] = [];
+  // Downsample if > 200 points for chart performance
+  const step = numberOfBets > 200 ? Math.ceil(numberOfBets / 200) : 1;
+  const sampleIndices: number[] = [];
+  for (let i = 0; i <= numberOfBets; i += step) {
+    sampleIndices.push(i);
+  }
+  if (sampleIndices[sampleIndices.length - 1] !== numberOfBets) {
+    sampleIndices.push(numberOfBets);
+  }
 
-  // --- Worst Case (losses first, then wins) ---
-  const worstOutcomes: boolean[] = [
-    ...Array(totalLosses).fill(false),
-    ...Array(totalWins).fill(true),
-  ];
+  for (const betIdx of sampleIndices) {
+    // Collect bankroll values at this bet number across all simulations
+    const values = new Float64Array(numSims);
+    for (let s = 0; s < numSims; s++) {
+      values[s] = allPaths[s][betIdx];
+    }
+    // Sort for percentile calculation
+    values.sort();
+    const sorted = Array.from(values);
 
-  const expected = runScenario(expectedOutcomes, initialBankroll, avgOdds, stakePercent);
-  const bestCase = runScenario(bestOutcomes, initialBankroll, avgOdds, stakePercent);
-  const worstCase = runScenario(worstOutcomes, initialBankroll, avgOdds, stakePercent);
+    percentiles.push({
+      betNumber: betIdx,
+      p10: percentile(sorted, 10),
+      p25: percentile(sorted, 25),
+      median: percentile(sorted, 50),
+      p75: percentile(sorted, 75),
+      p90: percentile(sorted, 90),
+    });
+  }
 
-  const finalExpected = expected[expected.length - 1]?.bankroll ?? initialBankroll;
-  const finalBest = bestCase[bestCase.length - 1]?.bankroll ?? initialBankroll;
-  const finalWorst = worstCase[worstCase.length - 1]?.bankroll ?? initialBankroll;
+  // ── Pick 10 random sample paths ──
+  const samplePaths: SamplePath[] = [];
+  const pathIndices = new Set<number>();
+  while (pathIndices.size < Math.min(10, numSims)) {
+    pathIndices.add(Math.floor(Math.random() * numSims));
+  }
+  for (const idx of pathIndices) {
+    // Downsample the path to match percentile points
+    const points = sampleIndices.map(i => allPaths[idx][i]);
+    samplePaths.push({ points });
+  }
 
-  const ddExpected = calcMaxDrawdown(expected);
+  // ── Aggregate statistics ──
+  const finalBankrolls = allPaths.map(p => p[numberOfBets]);
+  finalBankrolls.sort((a, b) => a - b);
 
-  return {
-    expected,
-    bestCase,
-    worstCase,
-    summary: {
-      finalExpected: Math.round(finalExpected * 100) / 100,
-      finalBest: Math.round(finalBest * 100) / 100,
-      finalWorst: Math.round(finalWorst * 100) / 100,
-      maxDrawdownExpected: ddExpected.amount,
-      maxDrawdownExpectedPct: ddExpected.pct,
-      expectedROI: initialBankroll > 0
-        ? Math.round(((finalExpected - initialBankroll) / initialBankroll) * 10000) / 100
-        : 0,
-      expectedProfit: Math.round((finalExpected - initialBankroll) * 100) / 100,
-    },
+  let profitCount = 0;
+  let ruinCount = 0;
+  let totalMaxDd = 0;
+  let totalMaxDdPct = 0;
+
+  for (let s = 0; s < numSims; s++) {
+    const final = allPaths[s][numberOfBets];
+    if (final > initialBankroll) profitCount++;
+
+    // Check if bankroll ever hit 0
+    let hitZero = false;
+    for (let i = 1; i <= numberOfBets; i++) {
+      if (allPaths[s][i] <= 0) { hitZero = true; break; }
+    }
+    if (hitZero) ruinCount++;
+
+    const dd = calcPathDrawdown(allPaths[s]);
+    totalMaxDd += dd.amount;
+    totalMaxDdPct += dd.pct;
+  }
+
+  const medianFinal = percentile(finalBankrolls, 50);
+
+  const summary = {
+    medianFinal: round2(medianFinal),
+    p90Final: round2(percentile(finalBankrolls, 90)),
+    p10Final: round2(percentile(finalBankrolls, 10)),
+    probProfit: round2((profitCount / numSims) * 100),
+    riskOfRuin: round2((ruinCount / numSims) * 100),
+    avgMaxDrawdown: round2(totalMaxDd / numSims),
+    avgMaxDrawdownPct: round2(totalMaxDdPct / numSims),
+    medianROI: initialBankroll > 0
+      ? round2(((medianFinal - initialBankroll) / initialBankroll) * 100)
+      : 0,
+    expectedProfit: round2(medianFinal - initialBankroll),
+    simulationsRun: numSims,
   };
+
+  return { percentiles, samplePaths, summary };
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+// ── Legacy wrapper ──
+export function runSimulation(input: SimulationInput): MonteCarloResult {
+  return runMonteCarloSimulation(input);
 }

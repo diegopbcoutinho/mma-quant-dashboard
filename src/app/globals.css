@@ -2598,6 +2598,13 @@ td.evt-name {
     color: var(--text-muted);
 }
 
+.sim-summary-card-sm {
+    padding: 16px 20px;
+}
+.sim-summary-card-sm .sim-summary-value {
+    font-size: 22px;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
     .sim-inputs-grid { grid-template-columns: 1fr 1fr; }
