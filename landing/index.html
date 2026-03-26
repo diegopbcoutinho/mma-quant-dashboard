@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FightEdge — MMA Betting Performance Tracking</title>
+  <meta name="description" content="Track your MMA bets, see your real performance, and make better decisions. Free to start." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: { main: '#0a0a0c', panel: 'rgba(20,20,24,0.7)', panelHover: 'rgba(30,30,36,0.9)' },
+            gold: { DEFAULT: '#D4AF37', glow: 'rgba(212,175,55,0.3)' },
+            accent: { red: '#E63946', redGlow: 'rgba(230,57,70,0.3)' },
+            muted: '#888891',
+            border: 'rgba(255,255,255,0.08)',
+          },
+          fontFamily: {
+            heading: ['Oswald', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+    .font-heading { font-family: 'Oswald', sans-serif; }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #D4AF37 0%, #b8962e 100%);
+      transition: all 0.3s ease;
+    }
+    .btn-gold:hover {
+      box-shadow: 0 0 30px rgba(212,175,55,0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn-gold-outline {
+      border: 2px solid #D4AF37;
+      color: #D4AF37;
+      transition: all 0.3s ease;
+    }
+    .btn-gold-outline:hover {
+      background: rgba(212,175,55,0.1);
+      box-shadow: 0 0 20px rgba(212,175,55,0.2);
+    }
+
+    .card-glow {
+      border: 1px solid rgba(212,175,55,0.12);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .card-glow:hover {
+      border-color: rgba(212,175,55,0.35);
+      box-shadow: 0 0 24px rgba(212,175,55,0.08);
+      transform: translateY(-2px);
+    }
+
+    .dashboard-placeholder {
+      background: linear-gradient(135deg, rgba(20,20,24,0.9) 0%, rgba(30,30,36,0.7) 100%);
+      border: 1px solid rgba(212,175,55,0.2);
+    }
+
+    .insight-card { transition: all 0.3s ease; }
+    .insight-card:hover {
+      border-color: rgba(212,175,55,0.4);
+      box-shadow: 0 0 24px rgba(212,175,55,0.12);
+      transform: translateY(-2px);
+    }
+
+    .step-number {
+      background: linear-gradient(135deg, #D4AF37 0%, #b8962e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gold-divider {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .gold-divider::before, .gold-divider::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(212,175,55,0.3), transparent);
+    }
+
+    .pain-bullet { border-left: 3px solid #E63946; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #D4AF37 0%, #ffffff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    @media (min-width: 768px) {
+      .step-connector { position: relative; }
+      .step-connector::after {
+        content: ''; position: absolute; top: 28px; right: -24px;
+        width: 48px; height: 2px;
+        background: linear-gradient(90deg, rgba(212,175,55,0.4), rgba(212,175,55,0.05));
+      }
+      .step-connector:last-child::after { display: none; }
+    }
+
+    .aha-arrow { color: #D4AF37; font-size: 14px; letter-spacing: 0.05em; }
+    .feature-check { color: #D4AF37; flex-shrink: 0; }
+    .result-glow { text-shadow: 0 0 20px rgba(230,57,70,0.3); }
+
+    /* Sticky mobile CTA */
+    .sticky-cta {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: rgba(10,10,12,0.95); backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(212,175,55,0.2);
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+      padding: 12px 16px;
+    }
+    .sticky-cta.visible { transform: translateY(0); }
+
+    /* Objection red-to-gold */
+    .objection-icon {
+      background: linear-gradient(135deg, rgba(230,57,70,0.15), rgba(212,175,55,0.15));
+    }
+
+    /* Ticker animation for the aha stats */
+    @keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .stat-animate { animation: countUp 0.6s ease-out forwards; }
+
+    /* Pulsing dot for "live" feel */
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(212,175,55,0.4); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(212,175,55,0); }
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #D4AF37;
+      animation: livePulse 2s ease-in-out infinite;
+    }
+
+    /* Testimonial subtle border */
+    .testimonial-card {
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: border-color 0.3s ease;
+    }
+    .testimonial-card:hover { border-color: rgba(212,175,55,0.2); }
+  </style>
+</head>
+
+<body class="bg-bg-main text-white antialiased">
+
+  <!-- ========== STICKY MOBILE CTA ========== -->
+  <div class="sticky-cta md:hidden" id="stickyCta">
+    <a href="#signup" class="btn-gold flex items-center justify-center gap-2 w-full py-3 rounded-lg text-bg-main font-semibold text-base">
+      See If You're Actually Profitable
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+    </a>
+  </div>
+
+  <!-- ========== HERO ========== -->
+  <section class="min-h-screen flex items-center relative overflow-hidden" id="hero">
+    <div class="absolute inset-0 bg-gradient-to-b from-bg-main via-bg-main to-[#0d0d10]"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gold/[0.03] blur-[120px]"></div>
+
+    <div class="relative z-10 max-w-6xl mx-auto px-6 py-20 md:py-28 w-full">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Left: Copy -->
+        <div>
+          <!-- Early access badge -->
+          <div class="inline-flex items-center gap-2 bg-bg-panel border border-gold/20 rounded-full px-4 py-1.5 mb-6">
+            <span class="live-dot"></span>
+            <span class="text-xs text-gold/80 font-medium">Early access — new features added weekly</span>
+          </div>
+
+          <h1 class="font-heading text-4xl md:text-5xl lg:text-[3.5rem] font-bold leading-[1.1] tracking-tight mb-6">
+            You're not losing because of bad picks.<br />
+            <span class="text-gold">You're losing because you don't see the pattern.</span>
+          </h1>
+          <p class="text-lg md:text-xl text-muted leading-relaxed mb-4 max-w-lg">
+            FightEdge shows you exactly where your money leaks — and how to fix it.
+          </p>
+          <p class="text-base text-muted/60 leading-relaxed mb-8 max-w-lg">
+            Track every bet. See your real performance. Build a system that actually holds up over time.
+          </p>
+          <div>
+            <a href="#signup" class="btn-gold inline-flex items-center gap-2 px-8 py-4 rounded-lg text-bg-main font-bold text-lg">
+              See If You're Actually Profitable
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </a>
+            <div class="flex items-center gap-4 mt-3">
+              <p class="text-sm text-muted">No credit card required</p>
+              <span class="text-muted/30">|</span>
+              <p class="text-sm text-muted">Takes less than 2 minutes</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Dashboard placeholder with AHA data -->
+        <div class="dashboard-placeholder rounded-2xl p-5 md:p-7 min-h-[340px] md:min-h-[420px] flex flex-col justify-center">
+          <div class="w-full space-y-3.5">
+            <!-- Label -->
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-xs text-muted/50 uppercase tracking-wider">Sample bettor analysis</p>
+              <div class="flex items-center gap-1.5">
+                <span class="live-dot" style="width:6px;height:6px"></span>
+                <span class="text-xs text-gold/50">Live</span>
+              </div>
+            </div>
+
+            <!-- Stat row — THE AHA MOMENT right in the hero -->
+            <div class="flex gap-3">
+              <div class="flex-1 bg-bg-main/60 rounded-lg p-3.5 text-center">
+                <p class="text-[10px] text-muted uppercase tracking-wider">Win Rate</p>
+                <p class="text-2xl font-bold text-gold mt-1">62.4%</p>
+                <p class="text-[10px] text-gold/50 mt-0.5">looks great</p>
+              </div>
+              <div class="flex-1 bg-bg-main/60 rounded-lg p-3.5 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-accent-red/[0.04]"></div>
+                <p class="text-[10px] text-muted uppercase tracking-wider relative z-10">ROI</p>
+                <p class="text-2xl font-bold text-accent-red mt-1 relative z-10">-3.2%</p>
+                <p class="text-[10px] text-accent-red/60 mt-0.5 relative z-10">losing money</p>
+              </div>
+              <div class="flex-1 bg-bg-main/60 rounded-lg p-3.5 text-center">
+                <p class="text-[10px] text-muted uppercase tracking-wider">Bets</p>
+                <p class="text-2xl font-bold text-white mt-1">148</p>
+                <p class="text-[10px] text-muted/40 mt-0.5">tracked</p>
+              </div>
+            </div>
+
+            <!-- The tension line -->
+            <div class="bg-accent-red/[0.06] border border-accent-red/15 rounded-lg px-4 py-3">
+              <div class="flex items-start gap-2.5">
+                <span class="text-accent-red text-sm mt-0.5">⚠</span>
+                <div>
+                  <p class="text-sm text-white/90 font-medium">Winning bets. Losing money.</p>
+                  <p class="text-xs text-muted mt-0.5">Bad staking cost this bettor $287 in the last 3 months</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart area -->
+            <div class="bg-bg-main/60 rounded-lg p-3.5 h-24 flex items-end gap-1">
+              <div class="w-full flex items-end gap-[3px] h-full">
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:45%"></div>
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:60%"></div>
+                <div class="flex-1 bg-accent-red/40 rounded-sm" style="height:30%"></div>
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:70%"></div>
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:55%"></div>
+                <div class="flex-1 bg-accent-red/40 rounded-sm" style="height:25%"></div>
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:80%"></div>
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:65%"></div>
+                <div class="flex-1 bg-accent-red/40 rounded-sm" style="height:35%"></div>
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:50%"></div>
+                <div class="flex-1 bg-gold/30 rounded-sm" style="height:75%"></div>
+                <div class="flex-1 bg-accent-red/40 rounded-sm" style="height:20%"></div>
+              </div>
+            </div>
+
+            <!-- Second alert -->
+            <div class="bg-gold/[0.05] border border-gold/15 rounded-lg px-4 py-2.5 flex items-center gap-2.5">
+              <span class="text-gold text-sm">⚡</span>
+              <p class="text-xs text-muted">Staking inconsistency detected — you bet 2% to 15% with no pattern</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TENSION BRIDGE — Loss avoidance ========== -->
+  <section class="py-6 md:py-8 border-t border-accent-red/10 bg-accent-red/[0.02]">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <p class="text-sm md:text-base text-muted">
+        Every bet you place without tracking is <span class="text-accent-red font-medium">data you lose forever.</span>
+        You might be leaking money right now — and not even know it.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== PROBLEM ========== -->
+  <section class="py-20 md:py-28 border-t border-border">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="font-heading text-3xl md:text-4xl font-bold text-center mb-3">
+        Most bettors don't have a strategy.
+      </h2>
+      <p class="text-xl text-center text-muted mb-12">
+        They have <span class="text-white font-medium">memories.</span>
+      </p>
+
+      <div class="text-center mb-12">
+        <p class="text-muted text-lg leading-relaxed max-w-xl mx-auto">
+          They remember the big wins. They forget the slow losses.<br />
+          And that's where the damage happens.
+        </p>
+      </div>
+
+      <div class="space-y-4 mb-12">
+        <div class="pain-bullet bg-bg-panel rounded-lg px-6 py-4">
+          <p class="text-base">
+            <span class="text-white font-medium">You think you're profitable</span>
+            <span class="text-muted"> — but you've never checked properly</span>
+          </p>
+        </div>
+        <div class="pain-bullet bg-bg-panel rounded-lg px-6 py-4">
+          <p class="text-base">
+            <span class="text-white font-medium">You win often</span>
+            <span class="text-muted"> — but your bankroll still shrinks</span>
+          </p>
+        </div>
+        <div class="pain-bullet bg-bg-panel rounded-lg px-6 py-4">
+          <p class="text-base">
+            <span class="text-white font-medium">You adjust your bets</span>
+            <span class="text-muted"> — but it's based on emotion, not data</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="text-center mb-12">
+        <p class="text-muted text-lg mb-2">The result?</p>
+        <p class="text-xl font-semibold text-accent-red result-glow">
+          You're not improving. You're repeating.
+        </p>
+      </div>
+
+      <!-- Mid-page CTA #1 -->
+      <div class="text-center">
+        <a href="#signup" class="btn-gold-outline inline-flex items-center gap-2 px-7 py-3 rounded-lg font-semibold text-base">
+          Start Tracking Your Bets Free
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        </a>
+        <p class="text-xs text-muted/50 mt-2">Log a bet in under 30 seconds. No spreadsheets. No complexity.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== REFRAME ========== -->
+  <section class="py-16 md:py-20 border-t border-border">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="gold-divider mb-10">
+        <span class="text-gold text-sm uppercase tracking-[0.2em] font-medium">Reframe</span>
+      </div>
+      <h2 class="font-heading text-2xl md:text-3xl lg:text-4xl font-bold mb-6 leading-tight">
+        This isn't about picking better fights.<br />
+        <span class="gradient-text">It's about understanding how you bet.</span>
+      </h2>
+      <p class="text-muted text-lg max-w-xl mx-auto leading-relaxed">
+        Because two bettors can make the same picks…<br />
+        and end up with <span class="text-white font-medium">completely different results.</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== SOLUTION ========== -->
+  <section class="py-20 md:py-28 border-t border-border">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-6">
+        <h2 class="font-heading text-3xl md:text-4xl font-bold mb-4">
+          Meet FightEdge — your <span class="text-gold">betting system</span>
+        </h2>
+        <p class="text-muted text-lg max-w-xl mx-auto mb-2">
+          Not picks. Not predictions. Not hype.
+        </p>
+        <p class="text-white font-medium text-lg">Just truth.</p>
+      </div>
+
+      <p class="text-muted text-center max-w-2xl mx-auto mb-14 leading-relaxed">
+        FightEdge turns your betting history into clear, actionable insight.<br />
+        So you can stop guessing — and start operating with intent.
+      </p>
+
+      <p class="text-sm uppercase tracking-[0.15em] text-gold/60 text-center mb-8 font-medium">What changes when you use it</p>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <!-- Clarity -->
+        <div class="card-glow bg-bg-panel rounded-xl p-7">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
+              <span class="text-xl">🧠</span>
+            </div>
+            <h3 class="font-heading text-xl font-bold">Clarity</h3>
+          </div>
+          <p class="text-muted text-sm mb-4 leading-relaxed">You finally see the full picture.</p>
+          <ul class="space-y-2.5">
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Real ROI (not gut feeling)</span></li>
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Win rate vs profitability</span></li>
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Performance by odds, event, fighter type</span></li>
+          </ul>
+          <p class="text-xs text-muted/60 mt-4 italic">No more illusions. Just data.</p>
+        </div>
+
+        <!-- Control -->
+        <div class="card-glow bg-bg-panel rounded-xl p-7">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
+              <span class="text-xl">🎯</span>
+            </div>
+            <h3 class="font-heading text-xl font-bold">Control</h3>
+          </div>
+          <p class="text-muted text-sm mb-4 leading-relaxed">You stop bleeding money in places you didn't notice.</p>
+          <ul class="space-y-2.5">
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Track bankroll properly</span></li>
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Fix inconsistent staking</span></li>
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Understand risk vs reward</span></li>
+          </ul>
+          <p class="text-xs text-muted/60 mt-4 italic">You don't just bet — you manage.</p>
+        </div>
+
+        <!-- Edge -->
+        <div class="card-glow bg-bg-panel rounded-xl p-7">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
+              <span class="text-xl">⚔️</span>
+            </div>
+            <h3 class="font-heading text-xl font-bold">Edge</h3>
+          </div>
+          <p class="text-muted text-sm mb-4 leading-relaxed">Patterns emerge. Mistakes become obvious.</p>
+          <ul class="space-y-2.5">
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Spot what actually works</span></li>
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Cut what doesn't</span></li>
+            <li class="flex items-start gap-2 text-sm"><span class="feature-check mt-0.5">✓</span><span class="text-muted">Double down with confidence</span></li>
+          </ul>
+          <p class="text-xs text-muted/60 mt-4 italic">Your edge isn't luck anymore. It's visible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="py-20 md:py-28 border-t border-border">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="font-heading text-3xl md:text-4xl font-bold text-center mb-4">
+        How it works
+      </h2>
+      <p class="text-muted text-center mb-14">Simple enough to start in 2 minutes. Powerful enough to change how you bet.</p>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="text-center step-connector">
+          <div class="step-number font-heading text-5xl font-bold mb-4">01</div>
+          <h3 class="font-semibold text-lg mb-3">Track your bets</h3>
+          <p class="text-muted text-sm leading-relaxed">
+            Log a bet in under 30 seconds. Or import your history via CSV.<br />
+            <span class="text-muted/50">No spreadsheets. No complexity.</span>
+          </p>
+        </div>
+
+        <div class="text-center step-connector">
+          <div class="step-number font-heading text-5xl font-bold mb-4">02</div>
+          <h3 class="font-semibold text-lg mb-3">See what's really happening</h3>
+          <p class="text-muted text-sm leading-relaxed mb-3">Your dashboard breaks everything down:</p>
+          <div class="flex flex-wrap justify-center gap-2">
+            <span class="text-xs bg-bg-panel border border-border rounded-full px-3 py-1 text-muted">ROI</span>
+            <span class="text-xs bg-bg-panel border border-border rounded-full px-3 py-1 text-muted">P&L</span>
+            <span class="text-xs bg-bg-panel border border-border rounded-full px-3 py-1 text-muted">Streaks</span>
+            <span class="text-xs bg-bg-panel border border-border rounded-full px-3 py-1 text-muted">Bet sizing</span>
+          </div>
+          <p class="text-xs text-muted/50 mt-3">You'll see things you've never noticed before.</p>
+        </div>
+
+        <div class="text-center step-connector">
+          <div class="step-number font-heading text-5xl font-bold mb-4">03</div>
+          <h3 class="font-semibold text-lg mb-3">Fix what's costing you money</h3>
+          <p class="text-muted text-sm leading-relaxed">
+            FightEdge highlights your leaks.<br />
+            Then helps you correct them.<br />
+            <span class="text-accent-red/70 font-medium text-xs">Before they cost you more.</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- CTA after how it works -->
+      <div class="text-center mt-14">
+        <a href="#signup" class="btn-gold inline-flex items-center gap-2 px-8 py-3.5 rounded-lg text-bg-main font-semibold text-base">
+          Start Tracking Your Bets Free
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        </a>
+        <p class="text-xs text-muted/50 mt-2">Free forever plan available</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== AHA MOMENT ========== -->
+  <section class="py-20 md:py-28 border-t border-border relative overflow-hidden">
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-accent-red/[0.02] blur-[100px]"></div>
+    <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-gold/[0.03] blur-[100px]"></div>
+
+    <div class="relative z-10 max-w-4xl mx-auto px-6">
+      <h2 class="font-heading text-3xl md:text-4xl font-bold text-center mb-3">
+        The "oh sh*t" moment
+      </h2>
+      <p class="text-muted text-center mb-4 max-w-xl mx-auto text-lg">
+        This is where things click.
+      </p>
+      <p class="text-muted/60 text-center mb-14 max-w-md mx-auto text-sm">
+        Not because of theory. Because of <span class="text-white">your own data.</span>
+      </p>
+
+      <div class="space-y-5">
+        <div class="insight-card card-glow bg-bg-panel rounded-xl p-6">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-accent-red/10 flex items-center justify-center flex-shrink-0">
+              <span class="text-accent-red text-xl">↓</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-lg mb-2">"You win 60% of your bets… but your losses are bigger than your wins."</p>
+              <p class="aha-arrow">→ You're not unlucky. Your sizing is broken.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-card card-glow bg-bg-panel rounded-xl p-6">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-accent-red/10 flex items-center justify-center flex-shrink-0">
+              <span class="text-accent-red text-xl">🔥</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-lg mb-2">"You increase stake after losses."</p>
+              <p class="aha-arrow">→ You're chasing. And it's measurable.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-card card-glow bg-bg-panel rounded-xl p-6">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gold/10 flex items-center justify-center flex-shrink-0">
+              <span class="text-gold text-xl">📈</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-lg mb-2">"Your best ROI comes from underdogs… but you barely bet them."</p>
+              <p class="aha-arrow">→ You're ignoring your own edge.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-12">
+        <div class="gold-divider mb-6">
+          <span class="text-xs text-muted/40 uppercase tracking-[0.2em]">The difference</span>
+        </div>
+        <p class="text-xl md:text-2xl font-medium">
+          Most bettors <span class="text-muted">feel.</span>
+          FightEdge <span class="text-gold font-bold">shows.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== THIS IS FOR YOU IF ========== -->
+  <section class="py-16 md:py-20 border-t border-border">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="font-heading text-2xl md:text-3xl font-bold text-center mb-10">
+        FightEdge is for you if...
+      </h2>
+
+      <div class="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <div class="flex items-start gap-3 bg-bg-panel rounded-lg px-5 py-4">
+          <span class="text-gold text-lg mt-0.5">✓</span>
+          <p class="text-sm text-muted">You bet on MMA regularly — even just a few times a month</p>
+        </div>
+        <div class="flex items-start gap-3 bg-bg-panel rounded-lg px-5 py-4">
+          <span class="text-gold text-lg mt-0.5">✓</span>
+          <p class="text-sm text-muted">You've had wins but no real consistency</p>
+        </div>
+        <div class="flex items-start gap-3 bg-bg-panel rounded-lg px-5 py-4">
+          <span class="text-gold text-lg mt-0.5">✓</span>
+          <p class="text-sm text-muted">You feel like you're missing something — but can't pinpoint what</p>
+        </div>
+        <div class="flex items-start gap-3 bg-bg-panel rounded-lg px-5 py-4">
+          <span class="text-gold text-lg mt-0.5">✓</span>
+          <p class="text-sm text-muted">You want to treat betting seriously — not just hope for the best</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HANDLE OBJECTIONS ========== -->
+  <section class="py-16 md:py-20 border-t border-border">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="font-heading text-2xl md:text-3xl font-bold text-center mb-4">
+        You might be thinking...
+      </h2>
+      <p class="text-muted text-center mb-12 text-sm">Fair. Let's address that.</p>
+
+      <div class="space-y-4">
+        <!-- Objection 1 -->
+        <div class="bg-bg-panel rounded-xl p-6 border border-border">
+          <div class="flex items-start gap-4">
+            <div class="objection-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span class="text-accent-red">✕</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-white mb-1.5">"I can just use a spreadsheet."</p>
+              <p class="text-sm text-muted leading-relaxed">
+                You could. But spreadsheets don't flag patterns, detect tilt, analyze staking consistency, or tell you where you're leaking money. FightEdge does — <span class="text-gold">automatically.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Objection 2 -->
+        <div class="bg-bg-panel rounded-xl p-6 border border-border">
+          <div class="flex items-start gap-4">
+            <div class="objection-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span class="text-accent-red">✕</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-white mb-1.5">"This looks complex."</p>
+              <p class="text-sm text-muted leading-relaxed">
+                Log a bet in under 30 seconds. The dashboard does the rest. No setup guides, no tutorials needed. If you can place a bet, <span class="text-gold">you can use FightEdge.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Objection 3 -->
+        <div class="bg-bg-panel rounded-xl p-6 border border-border">
+          <div class="flex items-start gap-4">
+            <div class="objection-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span class="text-accent-red">✕</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-white mb-1.5">"I already know how I perform."</p>
+              <p class="text-sm text-muted leading-relaxed">
+                Do you? Most bettors overestimate their win rate by 15–20% and have no idea how staking affects their P&L. The data usually <span class="text-gold">tells a very different story.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SOCIAL PROOF ========== -->
+  <section class="py-16 md:py-20 border-t border-border">
+    <div class="max-w-4xl mx-auto px-6">
+      <p class="text-sm uppercase tracking-[0.15em] text-gold/40 text-center mb-10 font-medium">What early users are saying</p>
+
+      <div class="grid md:grid-cols-3 gap-5">
+        <div class="testimonial-card bg-bg-panel rounded-xl p-6">
+          <div class="flex gap-1 mb-4">
+            <span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span>
+          </div>
+          <p class="text-sm text-muted leading-relaxed italic mb-5">
+            "I thought I was doing well. Turns out I was losing money on my 'safe bets'. Fixed that and the whole picture changed."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gold/15 flex items-center justify-center">
+              <span class="text-gold text-xs font-bold">M</span>
+            </div>
+            <div>
+              <p class="text-xs text-white/80 font-medium">Marcus R.</p>
+              <p class="text-xs text-muted/50">Beta user, 6 months</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card bg-bg-panel rounded-xl p-6">
+          <div class="flex gap-1 mb-4">
+            <span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span>
+          </div>
+          <p class="text-sm text-muted leading-relaxed italic mb-5">
+            "Seeing my actual staking behavior was a wake-up call. I was betting 3x more after losses without even realizing it."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gold/15 flex items-center justify-center">
+              <span class="text-gold text-xs font-bold">J</span>
+            </div>
+            <div>
+              <p class="text-xs text-white/80 font-medium">Jake T.</p>
+              <p class="text-xs text-muted/50">Beta user, 4 months</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card bg-bg-panel rounded-xl p-6">
+          <div class="flex gap-1 mb-4">
+            <span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold text-sm">★</span><span class="text-gold/30 text-sm">★</span>
+          </div>
+          <p class="text-sm text-muted leading-relaxed italic mb-5">
+            "Simple to use, genuinely useful. I actually look at my data now before placing bets. That alone changed my results."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gold/15 flex items-center justify-center">
+              <span class="text-gold text-xs font-bold">D</span>
+            </div>
+            <div>
+              <p class="text-xs text-white/80 font-medium">Daniel S.</p>
+              <p class="text-xs text-muted/50">Beta user, 3 months</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FINAL CTA ========== -->
+  <section id="signup" class="py-20 md:py-28 border-t border-border relative overflow-hidden">
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full bg-gold/[0.04] blur-[100px]"></div>
+
+    <div class="relative z-10 max-w-2xl mx-auto px-6 text-center">
+      <h2 class="font-heading text-3xl md:text-4xl font-bold mb-4">
+        Stop guessing.<br />Start operating like it matters.
+      </h2>
+      <p class="text-muted text-lg mb-3 max-w-lg mx-auto">
+        Every bet you place without data… is another leak you won't see.
+      </p>
+      <p class="text-white font-medium text-lg mb-8">
+        FightEdge changes that.
+      </p>
+
+      <div class="flex flex-wrap justify-center gap-3 mb-8">
+        <span class="text-xs bg-bg-panel border border-gold/20 rounded-full px-4 py-1.5 text-gold/80">Fast setup</span>
+        <span class="text-xs bg-bg-panel border border-gold/20 rounded-full px-4 py-1.5 text-gold/80">Immediate insight</span>
+        <span class="text-xs bg-bg-panel border border-gold/20 rounded-full px-4 py-1.5 text-gold/80">Long-term edge</span>
+      </div>
+
+      <a href="#" class="btn-gold inline-flex items-center gap-2 px-10 py-4 rounded-lg text-bg-main font-bold text-lg">
+        See If You're Actually Profitable
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+      </a>
+      <div class="flex items-center justify-center gap-4 mt-3">
+        <p class="text-sm text-muted">No credit card required</p>
+        <span class="text-muted/30">|</span>
+        <p class="text-sm text-muted">Takes less than 2 minutes</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CLOSING LINE ========== -->
+  <section class="py-14 border-t border-border">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <p class="text-muted text-base leading-relaxed">
+        You don't need more picks.<br />
+        You need to understand your own behavior.<br />
+        <span class="text-gold font-medium">That's where the edge is.</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="py-10 border-t border-border">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <p class="font-heading text-xl font-bold text-gold">FightEdge</p>
+      <p class="text-muted text-sm">&copy; 2026 FightEdge. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ========== STICKY CTA JS ========== -->
+  <script>
+    (function() {
+      var sticky = document.getElementById('stickyCta');
+      var hero = document.getElementById('hero');
+      if (!sticky || !hero) return;
+      var shown = false;
+      function check() {
+        var rect = hero.getBoundingClientRect();
+        var past = rect.bottom < 0;
+        if (past && !shown) { sticky.classList.add('visible'); shown = true; }
+        else if (!past && shown) { sticky.classList.remove('visible'); shown = false; }
+      }
+      window.addEventListener('scroll', check, { passive: true });
+      check();
+    })();
+  </script>
+
+</body>
+</html>
