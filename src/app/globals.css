@@ -1105,6 +1105,11 @@ tr:hover td {
     font-weight: 600;
 }
 
+.fighter-bet-highlight {
+    color: var(--accent-gold);
+    font-weight: 700;
+}
+
 /* ── Bet Row Animations ── */
 /* Transitions only activate when exit/flash classes are added */
 .bet-row-exit,

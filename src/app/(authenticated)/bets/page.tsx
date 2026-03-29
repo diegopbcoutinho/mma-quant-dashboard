@@ -261,7 +261,7 @@ export default function BetsPage() {
                 <div key={b.id || i}
                   className={`bet-mobile-card bet-row ${isExiting ? 'bet-row-exit' : ''} ${flashResult === 'W' ? 'bet-row-flash-win' : flashResult === 'L' ? 'bet-row-flash-loss' : ''}`}>
                   <div className="bmc-top">
-                    <div className="bmc-fight">{b.fight_name || '--'}</div>
+                    <div className="bmc-fight">{highlightFighter(b.fight_name || '', b.fighter || '')}</div>
                     <ResultBadge bet={b} isEditing={editingBetId === b.id}
                       onToggle={() => setEditingBetId(editingBetId === b.id ? null : (b.id ?? null))}
                       onSelect={(result) => { if (b.id) handleResultChange(b.id, result, b.stake_usd, b.odds); setEditingBetId(null); }} />
@@ -318,7 +318,7 @@ export default function BetsPage() {
                         className={`bet-row ${isExiting ? 'bet-row-exit' : ''} ${flashResult === 'W' ? 'bet-row-flash-win' : flashResult === 'L' ? 'bet-row-flash-loss' : ''}`}>
                         <td>{b.date || '--'}</td>
                         <td className="td-event">{b.event_name || '--'}</td>
-                        <td className="fighter-name">{b.fight_name || '--'}</td>
+                        <td className="fighter-name">{highlightFighter(b.fight_name || '', b.fighter || '')}</td>
                         <td>{b.odds > 0 ? b.odds.toFixed(3) : '--'}</td>
                         <td>{fmt(b.stake_usd)}</td>
                         <td>
@@ -401,6 +401,19 @@ export default function BetsPage() {
           confirmLabel="Delete" danger onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />
       )}
     </main>
+  );
+}
+
+function highlightFighter(fightName: string, fighter: string) {
+  if (!fighter || !fightName) return <>{fightName || '--'}</>;
+  const idx = fightName.toLowerCase().indexOf(fighter.toLowerCase());
+  if (idx === -1) return <>{fightName}</>;
+  return (
+    <>
+      {fightName.slice(0, idx)}
+      <span className="fighter-bet-highlight">{fightName.slice(idx, idx + fighter.length)}</span>
+      {fightName.slice(idx + fighter.length)}
+    </>
   );
 }
 
