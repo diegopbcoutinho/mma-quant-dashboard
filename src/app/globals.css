@@ -2260,6 +2260,8 @@ td.evt-name {
 
     .page-content   { padding: 16px; gap: 16px; }
     .top-bar        { padding: 10px 16px; }
+    .page-header    { flex-wrap: wrap; gap: 10px; }
+    .page-header-actions { flex-wrap: wrap; }
     .global-controls    { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; }
     .control-group .value { font-size: 20px; }
     .kpi-grid   { grid-template-columns: 1fr 1fr; gap: 14px; }

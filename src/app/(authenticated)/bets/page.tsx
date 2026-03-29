@@ -180,7 +180,7 @@ export default function BetsPage() {
     <main className="page-content">
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 className="page-title">Bets</h1>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="page-header-actions" style={{ display: 'flex', gap: 10 }}>
           <button className="btn-sync" onClick={handleGradeResults} disabled={grading}
             title="Auto-grade pending bets using fight results"
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
