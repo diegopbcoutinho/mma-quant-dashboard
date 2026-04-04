@@ -151,8 +151,9 @@ export function getSessionStats(bets: Bet[]): SessionStats {
   const currentWeek = weekKey(now);
   const settled = bets.filter((b) => {
     if (b.result !== 'W' && b.result !== 'L') return false;
-    const d = parseBetDate(b);
-    return weekKey(d) === currentWeek;
+    // Use graded_at (when result was marked) to determine the week, falling back to created_at/date
+    const resolvedDate = b.graded_at ? new Date(b.graded_at) : parseBetDate(b);
+    return weekKey(resolvedDate) === currentWeek;
   });
 
   const wins = settled.filter((b) => b.result === 'W').length;
