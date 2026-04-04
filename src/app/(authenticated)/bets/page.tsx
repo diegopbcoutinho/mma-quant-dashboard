@@ -109,8 +109,14 @@ export default function BetsPage() {
         return true;
       })
       .sort((a, b) => {
-        const da = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const db = b.created_at ? new Date(b.created_at).getTime() : 0;
+        const sortKeyA = currentTab === 'finished'
+          ? (a.graded_at ?? a.created_at ?? '')
+          : (a.created_at ?? '');
+        const sortKeyB = currentTab === 'finished'
+          ? (b.graded_at ?? b.created_at ?? '')
+          : (b.created_at ?? '');
+        const da = sortKeyA ? new Date(sortKeyA).getTime() : 0;
+        const db = sortKeyB ? new Date(sortKeyB).getTime() : 0;
         return db - da;
       });
   }, [bets, currentTab]);

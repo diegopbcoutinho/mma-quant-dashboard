@@ -170,16 +170,18 @@ export const useBetsStore = create<BetsState>((set, get) => ({
     else if (result === 'L') plUsd = -stakeUsd;
     // C (cancelled) = pl stays 0
 
+    const gradedAt = new Date().toISOString();
+
     set((state) => {
       const newBets = state.bets.map((b) =>
-        b.id === betId ? { ...b, result, pl_usd: plUsd } : b
+        b.id === betId ? { ...b, result, pl_usd: plUsd, graded_at: gradedAt } : b
       );
       const { analytics, metrics } = recalculate(newBets, state.settings);
       return { bets: newBets, analytics, metrics };
     });
 
     try {
-      await dataService.updateBet(betId, { result, pl_usd: plUsd });
+      await dataService.updateBet(betId, { result, pl_usd: plUsd, graded_at: gradedAt });
       set({ connectionError: false });
     } catch {
       set({ connectionError: true });
