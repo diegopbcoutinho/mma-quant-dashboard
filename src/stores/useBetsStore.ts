@@ -40,6 +40,7 @@ interface BetsState {
   addBet: (userId: string, bet: Omit<Bet, 'id' | 'user_id'>) => Promise<void>;
   editBet: (betId: string, updates: Partial<Bet>) => Promise<void>;
   removeBet: (betId: string) => Promise<void>;
+  removeAllBets: (userId: string) => Promise<void>;
   updateBetResult: (betId: string, result: 'W' | 'L' | 'C' | '-' | '', stakeUsd: number, odds: number) => Promise<void>;
   gradePendingBets: (userId: string) => Promise<GradingSummary>;
   fetchSettings: (userId: string) => Promise<void>;
@@ -161,6 +162,20 @@ export const useBetsStore = create<BetsState>((set, get) => ({
     } catch {
       const { analytics, metrics } = recalculate(prev, get().settings);
       set({ bets: prev, analytics, metrics, connectionError: true });
+    }
+  },
+
+  removeAllBets: async (userId) => {
+    const prev = get().bets;
+    const { analytics, metrics } = recalculate([], get().settings);
+    set({ bets: [], analytics, metrics });
+
+    try {
+      await dataService.deleteAllBets(userId);
+      set({ connectionError: false });
+    } catch {
+      const { analytics: prevAnalytics, metrics: prevMetrics } = recalculate(prev, get().settings);
+      set({ bets: prev, analytics: prevAnalytics, metrics: prevMetrics, connectionError: true });
     }
   },
 

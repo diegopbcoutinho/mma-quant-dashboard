@@ -20,6 +20,7 @@ export interface DataProvider {
   createBet(userId: string, bet: Omit<Bet, 'id' | 'user_id'>): Promise<Bet>;
   updateBet(betId: string, updates: Partial<Bet>): Promise<Bet>;
   deleteBet(betId: string): Promise<void>;
+  deleteAllBets(userId: string): Promise<void>;
   getSettings(userId: string): Promise<Settings | null>;
   updateSettings(userId: string, settings: Partial<Settings>): Promise<Settings>;
 }
@@ -49,6 +50,10 @@ export async function updateBet(betId: string, updates: Partial<Bet>): Promise<B
 
 export async function deleteBet(betId: string): Promise<void> {
   return activeProvider.deleteBet(betId);
+}
+
+export async function deleteAllBets(userId: string): Promise<void> {
+  return activeProvider.deleteAllBets(userId);
 }
 
 export async function getSettings(userId: string): Promise<Settings | null> {

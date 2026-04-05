@@ -3,17 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useBetsStore } from '@/stores/useBetsStore';
+import ConfirmModal from '@/components/ConfirmModal';
 import type { StakeStrategy } from '@/types';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
-  const { globals, settings, saveSettings, fetchBets, connectionError, metrics } = useBetsStore();
+  const { globals, settings, saveSettings, fetchBets, removeAllBets, connectionError, metrics } = useBetsStore();
 
   const [banca, setBanca] = useState('');
   const [unit, setUnit] = useState('');
   const [strategy, setStrategy] = useState<StakeStrategy>('flat');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   useEffect(() => {
     setBanca(String(globals.bancaInicial));
@@ -40,6 +43,14 @@ export default function SettingsPage() {
 
   const handleSync = () => {
     if (user) fetchBets(user.id);
+  };
+
+  const handleDeleteAllBets = async () => {
+    if (!user) return;
+    setDeletingAll(true);
+    await removeAllBets(user.id);
+    setDeletingAll(false);
+    setShowDeleteAllConfirm(false);
   };
 
   // Calculate unit value based on strategy
@@ -212,7 +223,65 @@ export default function SettingsPage() {
             )}
           </button>
         </section>
+
+        {/* Danger Zone */}
+        <section className="glass-panel settings-card settings-card--full" style={{
+          border: '1px solid rgba(230, 57, 70, 0.25)',
+          background: 'rgba(230, 57, 70, 0.04)',
+        }}>
+          <h3 style={{ color: 'var(--accent-red)' }}>
+            <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 8 }}></i>
+            Danger Zone
+          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+            <div>
+              <p style={{ fontSize: 14, color: 'var(--text-primary)', margin: 0, fontWeight: 600 }}>
+                Delete All Bets
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                Permanently removes all your bets, resetting all analytics and metrics. This cannot be undone.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDeleteAllConfirm(true)}
+              disabled={deletingAll}
+              style={{
+                marginLeft: 24,
+                flexShrink: 0,
+                padding: '10px 20px',
+                borderRadius: 8,
+                border: '1px solid rgba(230, 57, 70, 0.5)',
+                background: 'rgba(230, 57, 70, 0.1)',
+                color: 'var(--accent-red)',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: 14,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'all 200ms ease',
+              }}
+            >
+              {deletingAll ? (
+                <><i className="fa-solid fa-spinner fa-spin"></i> Deleting...</>
+              ) : (
+                <><i className="fa-solid fa-trash-can"></i> Delete All Bets</>
+              )}
+            </button>
+          </div>
+        </section>
       </div>
+
+      {showDeleteAllConfirm && (
+        <ConfirmModal
+          title="Delete All Bets"
+          message="Are you sure you want to delete ALL your bets? This will permanently remove all your betting history, analytics, and metrics. This action cannot be undone."
+          confirmLabel="Delete All"
+          danger
+          onConfirm={handleDeleteAllBets}
+          onCancel={() => setShowDeleteAllConfirm(false)}
+        />
+      )}
     </main>
   );
 }
