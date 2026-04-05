@@ -73,6 +73,15 @@ export const supabaseProvider: DataProvider = {
     if (error) throw new Error(error.message);
   },
 
+  async deleteAllBets(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('bets')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) throw new Error(error.message);
+  },
+
   async getSettings(userId: string): Promise<Settings | null> {
     const { data, error } = await supabase
       .from('settings')

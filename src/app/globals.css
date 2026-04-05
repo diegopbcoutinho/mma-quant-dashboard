@@ -1106,7 +1106,7 @@ tr:hover td {
 }
 
 .fighter-bet-highlight {
-    color: var(--accent-gold);
+    color: var(--accent-gold) !important;
     font-weight: 700;
 }
 
