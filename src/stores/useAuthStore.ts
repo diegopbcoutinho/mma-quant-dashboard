@@ -29,6 +29,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       set({ session, user: session?.user ?? null, loading: false });
+    }).catch(() => {
+      set({ loading: false });
     });
 
     // Listen for auth changes
