@@ -90,13 +90,17 @@ function isTitleFight(comp: EspnCompetition): boolean {
 function normalizeEvent(ev: EspnEvent): UpcomingEvent | null {
   if (!ev?.id || !ev?.competitions?.length) return null;
 
-  const fights: UpcomingFight[] = ev.competitions
+  // ESPN returns competitions in chronological order (earliest prelim first,
+  // main event last). We want the main event rendered first, so reverse.
+  const competitions = [...ev.competitions].reverse();
+  const total = competitions.length;
+
+  const fights: UpcomingFight[] = competitions
     .map((comp, idx): UpcomingFight | null => {
       const competitors = comp.competitors ?? [];
       if (competitors.length < 2) return null;
 
       const sorted = [...competitors].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      const total = ev.competitions?.length ?? 1;
 
       return {
         fightId: String(comp.id ?? `${ev.id}-${idx}`),
