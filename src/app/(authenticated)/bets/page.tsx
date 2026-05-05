@@ -9,6 +9,7 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import BetModal from '@/components/NewBetModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
+import UpcomingCardSection from '@/components/UpcomingCardSection';
 import { generateBetCard, downloadShareCard, type BetCardData } from '@/services/shareCardGenerator';
 import ImportCSVModal from '@/components/ImportCSVModal';
 import type { Bet } from '@/types';
@@ -206,6 +207,8 @@ export default function BetsPage() {
           </button>
         </div>
       </div>
+
+      <UpcomingCardSection />
 
       <section className="fights-section glass-panel">
         <div className="panel-header">
